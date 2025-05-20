@@ -17,27 +17,6 @@ interface RegisterInput {
   role?: "admin" | "mechanic" | "customer";
 }
 
-// Set JWT token in a secure HTTP-only cookie
-const sendTokenResponse = (user: IUser, statusCode: number, res: Response) => {
-  const token = user.generateAuthToken();
-
-  // Set cookie options
-  const cookieOptions: CookieOptions = {
-    httpOnly: true, // Prevents access from JavaScript (more secure)
-    secure: process.env.NODE_ENV === "production", // Only HTTPS in production
-    sameSite: "strict", // Helps prevent CSRF attacks
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days expiration
-  };
-
-  res.cookie("jwt", token, cookieOptions); // Store token in cookie
-
-  res.status(statusCode).json({
-    status: "success",
-    token,
-    user,
-  });
-};
-
 export const register = catchAsync(async (req: Request, res: Response) => {
   const { name, email, password, phone, address, role } =
     req.body as RegisterInput;
@@ -76,6 +55,13 @@ export const login = catchAsync(
         )
       );
     }
-    sendTokenResponse(user, 200, res);
+    // sendTokenResponse(user, 200, res);
+    const token = user.generateAuthToken();
+    res.status(200).json({
+      status: "success",
+      message: "Logged in successfully",
+      token,
+      user,
+    });
   }
 );

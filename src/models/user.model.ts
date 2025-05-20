@@ -7,6 +7,8 @@ import validator from "validator";
 type Role = "admin" | "mechanic" | "customer";
 
 export interface IUser {
+  id: mongoose.Types.ObjectId;
+  // personal info
   name: string;
   email: string;
   password: string;
@@ -19,6 +21,12 @@ export interface IUser {
   // methods
   comparePassword(password: string): Promise<boolean>;
   generateAuthToken(): string;
+}
+
+interface JwtPayload {
+  id: mongoose.Types.ObjectId;
+  role: Role;
+  email: string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -88,7 +96,7 @@ userSchema.methods.comparePassword = async function (password: string) {
 };
 
 userSchema.methods.generateAuthToken = function () {
-  const payload = {
+  const payload: JwtPayload = {
     id: this._id,
     role: this.role,
     email: this.email,
