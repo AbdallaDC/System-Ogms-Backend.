@@ -68,7 +68,7 @@ export const updateService = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const updatedService = await Service.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      { ...req.body, updatedBy: req.user?.email },
       {
         new: true,
         runValidators: true,
