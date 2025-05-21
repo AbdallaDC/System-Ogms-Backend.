@@ -26,7 +26,7 @@ export const protect = catchAsync(
     }
     // Verify token
     const decoded = await jwt.verify(token, JWT_SECRET);
-    console.log("decoded", decoded);
+    // console.log("decoded", decoded);
 
     req.user = decoded as IUser;
     next();

@@ -106,6 +106,14 @@ userSchema.methods.generateAuthToken = function () {
   });
 };
 
+userSchema.set("toJSON", { virtuals: true });
+userSchema.set("toObject", { virtuals: true });
+userSchema.virtual("bookings", {
+  ref: "Booking",
+  localField: "_id",
+  foreignField: "user_id",
+});
+
 const User = model<IUser>("User", userSchema);
 
 export default User;

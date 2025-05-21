@@ -35,7 +35,20 @@ export const getAllUsers = catchAsync(
 
 export const getUserById = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id).populate({
+      path: "bookings",
+      // select: "service_id vehicle_id",
+      populate: [
+        {
+          path: "service_id",
+          select: "service_name",
+        },
+        {
+          path: "vehicle_id",
+          select: "make model year",
+        },
+      ],
+    });
 
     if (!user) {
       return next(new AppError("User not found!", 404));
@@ -76,6 +89,58 @@ export const deleteUser = catchAsync(
     res.status(204).json({
       status: "success",
       message: "User deleted successfully!",
+    });
+  }
+);
+
+// get all users by role
+export const getAllUsersByRole = catchAsync(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    // const users = await User.find({
+    //   role: req.params.role,
+    // })
+    const features = new APIFeatures(
+      User.find({ role: req.params.role }),
+      req.query
+    )
+      .filter()
+      .sort()
+      .limitingFields()
+      .paginate();
+
+    // get total users
+    const totalUserDocs = await User.countDocuments({ role: req.params.role });
+
+    // Add search functionality
+    if (req.query.search) {
+      features.query = features.query.find({
+        name: { $regex: req.query.search, $options: "i" },
+      });
+    }
+    const users = await features.query;
+    // .populate({
+    //   path: "bookings",
+    //   // select: "service_id vehicle_id",
+    //   populate: [
+    //     {
+    //       path: "service_id",
+    //       select: "service_name",
+    //     },
+    //     {
+    //       path: "vehicle_id",
+    //       select: "make model year",
+    //     },
+    //   ],
+    // });
+
+    // if (!users) {
+    //   return next(new AppError("User not found!", 404));
+    // }
+    res.status(200).json({
+      status: "success",
+      result: users.length,
+      count: totalUserDocs,
+      users,
     });
   }
 );

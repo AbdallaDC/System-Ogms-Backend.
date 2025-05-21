@@ -4,10 +4,21 @@ import catchAsync from "../utils/catchAsync";
 import AppError from "../utils/AppError";
 import { AuthRequest } from "../middleware/protect";
 import APIFeatures from "../utils/APIFeatures";
+import User from "../models/user.model";
 
 // create booking
 export const createBooking = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const userId = req.body.user_id;
+
+    const user = await User.findById(userId);
+
+    if (user?.role !== "customer") {
+      return next(
+        new AppError("You are not authorized to create booking!", 403)
+      );
+    }
+
     const booking = await Booking.create({
       ...req.body,
       createdBy: req.user?.email,
@@ -102,6 +113,27 @@ export const deleteBooking = catchAsync(
     res.status(204).json({
       status: "success",
       message: "Booking deleted successfully!",
+    });
+  }
+);
+
+// get booking by user id
+export const getBookingByUserId = catchAsync(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const booking = await Booking.find({
+      user_id: req.params.user_id,
+    }).populate({
+      path: "service_id",
+      select: "service_name",
+    });
+
+    if (!booking) {
+      return next(new AppError("Booking not found!", 404));
+    }
+    res.status(200).json({
+      status: "success",
+      result: booking.length,
+      booking,
     });
   }
 );
