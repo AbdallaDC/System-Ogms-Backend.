@@ -147,10 +147,19 @@ export const getUnassignedBookings = catchAsync(
     const bookings = await Booking.find({
       _id: { $nin: assignedBookingIds },
       status: "pending",
-    }).populate({
-      path: "user_id",
-      select: "name email phone role",
-    });
+    })
+      .populate({
+        path: "user_id",
+        select: "name email phone role",
+      })
+      .populate({
+        path: "vehicle_id",
+        select: "make model year",
+      })
+      .populate({
+        path: "service_id",
+        select: "service_name",
+      });
 
     if (!bookings || bookings.length === 0) {
       return next(new AppError("Booking not found!", 404));
@@ -158,7 +167,7 @@ export const getUnassignedBookings = catchAsync(
     res.status(200).json({
       status: "success",
       result: bookings.length,
-      booking: bookings,
+      bookings: bookings,
     });
   }
 );
