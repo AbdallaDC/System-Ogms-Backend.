@@ -6,6 +6,7 @@ import {
   updateBooking,
   deleteBooking,
   getBookingByUserId,
+  getUnassignedBookings,
 } from "../controllers/booking.controller";
 import { protect, restrictTo } from "../middleware/protect";
 
@@ -18,5 +19,6 @@ router.put("/:id", protect, restrictTo("admin"), updateBooking);
 router.delete("/:id", protect, restrictTo("admin"), deleteBooking);
 
 router.get("/user/:user_id", protect, getBookingByUserId);
+router.get("/unassigned/bookings", protect, getUnassignedBookings);
 
 export default router;

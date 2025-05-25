@@ -5,6 +5,7 @@ import AppError from "../utils/AppError";
 import { AuthRequest } from "../middleware/protect";
 import APIFeatures from "../utils/APIFeatures";
 import User from "../models/user.model";
+import Assign from "../models/assign.model";
 
 // create booking
 export const createBooking = catchAsync(
@@ -134,6 +135,30 @@ export const getBookingByUserId = catchAsync(
       status: "success",
       result: booking.length,
       booking,
+    });
+  }
+);
+
+// get unassigned bookings
+export const getUnassignedBookings = catchAsync(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    // Find bookings whose _id is NOT present in any Assign document's booking_id
+    const assignedBookingIds = await Assign.distinct("booking_id");
+    const bookings = await Booking.find({
+      _id: { $nin: assignedBookingIds },
+      status: "pending",
+    }).populate({
+      path: "user_id",
+      select: "name email phone role",
+    });
+
+    if (!bookings || bookings.length === 0) {
+      return next(new AppError("Booking not found!", 404));
+    }
+    res.status(200).json({
+      status: "success",
+      result: bookings.length,
+      booking: bookings,
     });
   }
 );
