@@ -43,7 +43,7 @@ export const getAllBookings = catchAsync(
     const bookings = await features.query
       .populate({
         path: "user_id",
-        select: "name email phone",
+        select: "name email phone role",
       })
       .populate({
         path: "vehicle_id",

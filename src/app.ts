@@ -27,7 +27,7 @@ app.use("/api/v1/assigns", assignRoutes);
 app.use((req, res) => {
   res.status(404).json({
     status: "fail",
-    message: "Not found!",
+    message: `Not found! ${req.originalUrl}`,
   });
 });
 
