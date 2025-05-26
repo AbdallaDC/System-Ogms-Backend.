@@ -114,6 +114,12 @@ userSchema.virtual("bookings", {
   foreignField: "user_id",
 });
 
+userSchema.virtual("assigns", {
+  ref: "Assign",
+  localField: "_id",
+  foreignField: "user_id",
+});
+
 const User = model<IUser>("User", userSchema);
 
 export default User;

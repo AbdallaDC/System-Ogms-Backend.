@@ -35,20 +35,44 @@ export const getAllUsers = catchAsync(
 
 export const getUserById = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const user = await User.findById(req.params.id).populate({
-      path: "bookings",
-      // select: "service_id vehicle_id",
-      populate: [
-        {
-          path: "service_id",
-          select: "service_name",
-        },
-        {
-          path: "vehicle_id",
-          select: "make model year",
-        },
-      ],
-    });
+    const user = await User.findById(req.params.id)
+      .populate({
+        path: "bookings",
+        // select: "service_id vehicle_id",
+        populate: [
+          {
+            path: "service_id",
+            select: "service_name",
+          },
+          {
+            path: "vehicle_id",
+            select: "make model year",
+          },
+        ],
+      })
+      .populate({
+        path: "assigns",
+        populate: [
+          {
+            path: "booking_id",
+            select: "booking_date service_id vehicle_id user_id status",
+            populate: [
+              {
+                path: "service_id",
+                select: "service_name",
+              },
+              {
+                path: "user_id",
+                select: "name email phone role",
+              },
+              {
+                path: "vehicle_id",
+                select: "make model year",
+              },
+            ],
+          },
+        ],
+      });
 
     if (!user) {
       return next(new AppError("User not found!", 404));
