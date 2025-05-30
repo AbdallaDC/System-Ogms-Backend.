@@ -10,10 +10,10 @@ import { protect, restrictTo } from "../middleware/protect";
 
 const router = express.Router();
 
-router.post("/", protect,createVehicle);
-router.get("/", protect, getAllVehicles);
-router.get("/:id", protect, getVehicleById);
-router.put("/:id", protect, updateVehicle);
-router.delete("/:id", protect,);
+router.post("/", createVehicle);
+router.get("/", getAllVehicles);
+router.get("/:id", getVehicleById);
+router.put("/:id", updateVehicle);
+router.delete("/:id", deleteVehicle);
 
 export default router;
