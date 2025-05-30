@@ -22,7 +22,7 @@ export const createVehicle = catchAsync(
 );
 
 export const getAllVehicles = catchAsync(
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const features = new APIFeatures(Vehicle.find(), req.query)
       .filter()
       .sort()
