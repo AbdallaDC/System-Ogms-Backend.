@@ -102,7 +102,7 @@ userSchema.methods.generateAuthToken = function () {
     email: this.email,
   };
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: "7d",
+    expiresIn: "30d",
   });
 };
 
