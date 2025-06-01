@@ -13,7 +13,7 @@ import assignRoutes from "./routes/assign.routes";
 
 // middleware
 app.use(express.json());
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: "*", allowedHeaders: "*" }));
 
 // routes
 app.use("/api/v1/auth", authRoutes);

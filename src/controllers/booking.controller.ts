@@ -69,7 +69,19 @@ export const getAllBookings = catchAsync(
 
 export const getBookingById = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findById(req.params.id)
+      .populate({
+        path: "user_id",
+        select: "name email phone role",
+      })
+      .populate({
+        path: "vehicle_id",
+        select: "make model year",
+      })
+      .populate({
+        path: "service_id",
+        select: "service_name description",
+      });
 
     if (!booking) {
       return next(new AppError("Booking not found!", 404));
