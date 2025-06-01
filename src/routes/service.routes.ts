@@ -11,7 +11,7 @@ import { protect, restrictTo } from "../middleware/protect";
 const router = express.Router();
 
 router.post("/", protect, restrictTo("admin"), createService);
-router.get("/", protect, restrictTo("admin"), getAllServices);
+router.get("/", protect, restrictTo("admin", "customer"), getAllServices);
 router.get("/:id", protect, restrictTo("admin"), getServiceById);
 router.put("/:id", protect, restrictTo("admin"), updateService);
 router.delete("/:id", protect, restrictTo("admin"), deleteService);
