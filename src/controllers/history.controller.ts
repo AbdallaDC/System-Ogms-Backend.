@@ -212,6 +212,7 @@ export const getServiceHistoryByService = catchAsync(
         populate: { path: "owner", select: "fullName email" },
       })
       .populate("service_id")
+      .populate("user_id")
       .lean();
 
     const assigns = await Assign.find({
