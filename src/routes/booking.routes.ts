@@ -12,11 +12,15 @@ import { protect, restrictTo } from "../middleware/protect";
 
 const router = express.Router();
 
-router.post("/", protect, createBooking);
-router.get("/", protect, getAllBookings);
-router.get("/:id", protect, restrictTo("admin"), getBookingById);
-router.put("/:id", protect, restrictTo("admin"), updateBooking);
-router.delete("/:id", protect, restrictTo("admin"), deleteBooking);
+router.use(protect);
+
+router.route("/").post(createBooking).get(getAllBookings);
+
+router
+  .route("/:id")
+  .get(getBookingById)
+  .put(updateBooking)
+  .delete(deleteBooking);
 
 router.get("/user/:user_id", protect, getBookingByUserId);
 router.get("/unassigned/bookings", protect, getUnassignedBookings);

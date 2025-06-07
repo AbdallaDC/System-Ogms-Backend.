@@ -4,6 +4,9 @@ import catchAsync from "../utils/catchAsync";
 import AppError from "../utils/AppError";
 import { AuthRequest } from "../middleware/protect";
 import APIFeatures from "../utils/APIFeatures";
+import Inventory from "../models/inventory.model";
+import Booking from "../models/booking.model";
+import Assign from "../models/assign.model";
 
 // create service
 export const createService = catchAsync(
@@ -21,6 +24,29 @@ export const createService = catchAsync(
   }
 );
 
+// export const createService = async (
+//   req: AuthRequest,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   const service = await Service.create(req.body);
+
+//   // Loop through each used inventory item
+//   for (const usage of service?.usedInventory!) {
+//     const item = await Inventory.findById(usage.item);
+//     if (!item) return next(new AppError("Inventory item not found", 404));
+
+//     if (item.quantity < usage.quantity) {
+//       return next(new AppError(`Not enough stock for ${item.name}`, 400));
+//     }
+
+//     item.quantity -= usage.quantity;
+//     await item.save();
+//   }
+
+//   res.status(201).json(service);
+// };
+
 export const getAllServices = catchAsync(
   async (req: AuthRequest, res: Response) => {
     const features = new APIFeatures(Service.find(), req.query)
@@ -36,6 +62,10 @@ export const getAllServices = catchAsync(
       });
     }
     const services = await features.query;
+    // .populate({
+    //   path: "usedInventory.item",
+    //   select: "name price type",
+    // });
 
     // get total services
     const totalServiceDocs = await Service.countDocuments();
@@ -96,6 +126,69 @@ export const deleteService = catchAsync(
     res.status(204).json({
       status: "success",
       message: "Service deleted successfully!",
+    });
+  }
+);
+
+// service report
+
+export const getServiceReport = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { serviceId, startDate, endDate } = req.query;
+
+    const services = serviceId
+      ? await Service.find({ _id: serviceId }).lean()
+      : await Service.find().lean();
+
+    const bookings = await Booking.find(
+      serviceId ? { service_id: serviceId } : {}
+    )
+      .populate("service_id")
+      .lean();
+
+    const assigns = await Assign.find().lean();
+    // console.log("assigns", assigns);
+
+    const report = services.map((service) => {
+      const serviceBookings = bookings
+        .filter(
+          (b) =>
+            b.service_id &&
+            b.service_id._id.toString() === service._id.toString()
+        )
+        .filter((b) => {
+          if (startDate && endDate) {
+            const d = new Date(b.booking_date);
+            return (
+              d >= new Date(startDate as string) &&
+              d <= new Date(endDate as string)
+            );
+          }
+          return true;
+        });
+      // console.log("serviceBookings", serviceBookings);
+
+      const completedBookings = serviceBookings.filter((b) => {
+        const a = assigns.find(
+          (a) => a.booking_id.toString() === b._id.toString()
+        );
+        return a?.status === "completed";
+      });
+
+      // console.log("completedBookings", completedBookings);
+
+      return {
+        service_name: service.service_name,
+        totalBookings: serviceBookings.length,
+        completedBookings: completedBookings.length,
+        totalRevenue: completedBookings.length * (service.price || 0),
+      };
+    });
+
+    res.status(200).json({
+      status: "success",
+      result: report.length,
+      report,
     });
   }
 );

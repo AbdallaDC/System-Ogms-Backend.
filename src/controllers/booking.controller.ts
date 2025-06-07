@@ -14,11 +14,11 @@ export const createBooking = catchAsync(
 
     const user = await User.findById(userId);
 
-    if (user?.role !== "customer") {
-      return next(
-        new AppError("You are not authorized to create booking!", 403)
-      );
-    }
+    // if (user?.role !== "customer") {
+    //   return next(
+    //     new AppError("You are not authorized to create booking!", 403)
+    //   );
+    // }
 
     const booking = await Booking.create({
       ...req.body,
@@ -44,15 +44,15 @@ export const getAllBookings = catchAsync(
     const bookings = await features.query
       .populate({
         path: "user_id",
-        select: "name email phone role",
+        select: "name email phone role user_id",
       })
       .populate({
         path: "vehicle_id",
-        select: "make model year",
+        select: "make model year vehicle_id",
       })
       .populate({
         path: "service_id",
-        select: "service_name",
+        select: "service_name service_id price",
       });
 
     // get total bookings
@@ -137,7 +137,7 @@ export const getBookingByUserId = catchAsync(
       user_id: req.params.user_id,
     }).populate({
       path: "service_id",
-      select: "service_name",
+      select: "service_name service_id price",
     });
 
     if (!booking) {
@@ -162,15 +162,15 @@ export const getUnassignedBookings = catchAsync(
     })
       .populate({
         path: "user_id",
-        select: "name email phone role",
+        select: "name email phone role user_id",
       })
       .populate({
         path: "vehicle_id",
-        select: "make model year",
+        select: "make model year vehicle_id",
       })
       .populate({
         path: "service_id",
-        select: "service_name",
+        select: "service_name service_id price",
       });
 
     if (!bookings || bookings.length === 0) {

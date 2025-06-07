@@ -6,6 +6,7 @@ import {
   updateAssign,
   deleteAssign,
   getAssignByUserId,
+  transferAssign,
 } from "../controllers/assign.controller";
 import { protect, restrictTo } from "../middleware/protect";
 
@@ -18,5 +19,6 @@ router.put("/:id", protect, restrictTo("admin"), updateAssign);
 router.delete("/:id", protect, restrictTo("admin"), deleteAssign);
 
 router.get("/user/:user_id", protect, getAssignByUserId);
+router.put("/:id/transfer", protect, restrictTo("admin"), transferAssign);
 
 export default router;

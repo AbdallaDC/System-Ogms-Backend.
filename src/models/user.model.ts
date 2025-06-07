@@ -3,6 +3,7 @@ import bcryptjs from "bcryptjs";
 import { JWT_SECRET } from "../config";
 import jwt from "jsonwebtoken";
 import validator from "validator";
+import Counter from "./couner.model";
 
 type Role = "admin" | "mechanic" | "customer";
 
@@ -21,6 +22,7 @@ export interface IUser {
   // methods
   comparePassword(password: string): Promise<boolean>;
   generateAuthToken(): string;
+  user_id?: string;
 }
 
 interface JwtPayload {
@@ -61,6 +63,9 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: true,
     },
+    user_id: {
+      type: String,
+    },
     phone: {
       type: String,
       required: true,
@@ -82,6 +87,21 @@ const userSchema = new Schema<IUser>(
   },
   { timestamps: true }
 );
+
+userSchema.pre("save", async function (next) {
+  if (this.isNew) {
+    const counter = await Counter.findOneAndUpdate(
+      { model: "User" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+
+    const prefix = "USR";
+    const padded = counter.seq.toString().padStart(3, "0");
+    this.user_id = `${prefix}${padded}`;
+  }
+  next();
+});
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {

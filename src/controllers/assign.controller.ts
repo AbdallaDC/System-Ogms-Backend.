@@ -5,6 +5,7 @@ import AppError from "../utils/AppError";
 import { AuthRequest } from "../middleware/protect";
 import APIFeatures from "../utils/APIFeatures";
 import User from "../models/user.model";
+import Booking from "../models/booking.model";
 
 // create assign
 export const createAssign = catchAsync(
@@ -17,10 +18,19 @@ export const createAssign = catchAsync(
       return next(new AppError("only mechanic can assign to work", 403));
     }
 
+    // check if booking is exist
+    const booking = await Booking.findById(req.body.booking_id);
+    if (!booking) {
+      return next(new AppError("Booking not found", 404));
+    }
+
     const assign = await Assign.create({
       ...req.body,
       createdBy: req.user?.email,
     });
+
+    booking.status = "assigned";
+    await booking.save();
 
     res.status(201).json({
       status: "success",
@@ -41,7 +51,7 @@ export const getAllAssigns = catchAsync(
     const assigns = await features.query
       .populate({
         path: "user_id",
-        select: "name email phone",
+        select: "name email phone user_id role",
       })
       .populate({
         path: "booking_id",
@@ -49,13 +59,21 @@ export const getAllAssigns = catchAsync(
         populate: [
           {
             path: "service_id",
-            select: "service_name",
+            select: "service_name service_id price",
           },
           {
             path: "vehicle_id",
-            select: "make model year",
+            select: "make model year vehicle_id",
           },
         ],
+      })
+      .populate({
+        path: "transferHistory.from",
+        select: "name user_id",
+      })
+      .populate({
+        path: "transferHistory.to",
+        select: "name user_id",
       });
 
     // get total assigns
@@ -150,11 +168,11 @@ export const getAssignByUserId = catchAsync(
       populate: [
         {
           path: "service_id",
-          select: "service_name",
+          select: "service_name service_id price",
         },
         {
           path: "vehicle_id",
-          select: "make model year",
+          select: "make model year vehicle_id",
         },
       ],
     });
@@ -169,3 +187,38 @@ export const getAssignByUserId = catchAsync(
     });
   }
 );
+
+// transfer assign
+export const transferAssign = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const { id } = req.params; // assign_id
+  const { new_user_id, reason } = req.body;
+
+  const assign = await Assign.findOne({ _id: id });
+  if (!assign) return next(new AppError("Assign not found", 404));
+
+  const previousUser = assign.user_id;
+
+  // update assign
+  assign.user_id = new_user_id;
+  assign.transferredBy = req.user?.email;
+  assign.transferReason = reason;
+
+  assign.transferHistory.push({
+    from: previousUser,
+    to: new_user_id,
+    reason,
+    date: new Date(),
+  });
+
+  await assign.save();
+
+  res.status(200).json({
+    status: "success",
+    message: `Assign transferred successfully!`,
+    assign,
+  });
+};

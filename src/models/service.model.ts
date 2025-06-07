@@ -1,4 +1,5 @@
 import mongoose, { Schema, model } from "mongoose";
+import Counter from "./couner.model";
 
 export interface IService {
   service_name: string;
@@ -8,6 +9,11 @@ export interface IService {
   updatedBy?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  // usedInventory?: {
+  //   item: mongoose.Types.ObjectId;
+  //   quantity: number;
+  // };
+  service_id?: string;
 }
 
 const serviceSchema = new Schema<IService>(
@@ -18,7 +24,7 @@ const serviceSchema = new Schema<IService>(
     },
     description: {
       type: String,
-      required: true,
+      // required: true,
     },
     price: {
       type: Number,
@@ -30,9 +36,36 @@ const serviceSchema = new Schema<IService>(
     updatedBy: {
       type: String,
     },
+    // usedInventory: [
+    //   {
+    //     item: {
+    //       type: mongoose.Schema.Types.ObjectId,
+    //       ref: "Inventory",
+    //     },
+    //     quantity: Number,
+    //   },
+    // ],
+    service_id: {
+      type: String,
+    },
   },
   { timestamps: true }
 );
+
+serviceSchema.pre("save", async function (next) {
+  if (this.isNew) {
+    const counter = await Counter.findOneAndUpdate(
+      { model: "Service" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+
+    const prefix = "SRV";
+    const padded = counter.seq.toString().padStart(3, "0");
+    this.service_id = `${prefix}${padded}`;
+  }
+  next();
+});
 
 const Service = model<IService>("Service", serviceSchema);
 export default Service;
