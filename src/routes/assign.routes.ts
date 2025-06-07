@@ -7,6 +7,7 @@ import {
   deleteAssign,
   getAssignByUserId,
   transferAssign,
+  updateAssignStatus,
 } from "../controllers/assign.controller";
 import { protect, restrictTo } from "../middleware/protect";
 
@@ -16,6 +17,7 @@ router.post("/", protect, restrictTo("admin"), createAssign);
 router.get("/", protect, restrictTo("admin"), getAllAssigns);
 router.get("/:id", protect, restrictTo("admin"), getAssignById);
 router.put("/:id", protect, restrictTo("admin"), updateAssign);
+router.patch('/:id/status', protect, updateAssignStatus);
 router.delete("/:id", protect, restrictTo("admin"), deleteAssign);
 
 router.get("/user/:user_id", protect, getAssignByUserId);

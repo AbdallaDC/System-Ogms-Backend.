@@ -39,6 +39,33 @@ export const createAssign = catchAsync(
     });
   }
 );
+export const updateAssignStatus = catchAsync(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ['pending', 'in progress', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return next(new AppError('Invalid status value', 400));
+    }
+
+    const assign = await Assign.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!assign) {
+      return next(new AppError('Assigned work not found', 404));
+    }
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Status updated successfully',
+      data: assign,
+    });
+  }
+);
 
 export const getAllAssigns = catchAsync(
   async (req: AuthRequest, res: Response) => {
