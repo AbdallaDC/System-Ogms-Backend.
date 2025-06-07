@@ -44,9 +44,9 @@ export const updateAssignStatus = catchAsync(
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ['pending', 'in progress', 'completed', 'cancelled'];
+    const validStatuses = ["pending", "in progress", "completed", "cancelled"];
     if (!validStatuses.includes(status)) {
-      return next(new AppError('Invalid status value', 400));
+      return next(new AppError("Invalid status value", 400));
     }
 
     const assign = await Assign.findByIdAndUpdate(
@@ -56,12 +56,12 @@ export const updateAssignStatus = catchAsync(
     );
 
     if (!assign) {
-      return next(new AppError('Assigned work not found', 404));
+      return next(new AppError("Assigned work not found", 404));
     }
 
     res.status(200).json({
-      status: 'success',
-      message: 'Status updated successfully',
+      status: "success",
+      message: "Status updated successfully",
       data: assign,
     });
   }
@@ -120,7 +120,7 @@ export const getAssignById = catchAsync(
     const assign = await Assign.findById(req.params.id)
       .populate({
         path: "user_id",
-        select: "name email phone",
+        select: "name email phone user_id",
       })
       .populate({
         path: "booking_id",
@@ -128,13 +128,21 @@ export const getAssignById = catchAsync(
         populate: [
           {
             path: "service_id",
-            select: "service_name",
+            select: "service_name service_id price",
           },
           {
             path: "vehicle_id",
-            select: "make model year",
+            select: "make model year vehicle_id",
           },
         ],
+      })
+      .populate({
+        path: "transferHistory.from",
+        select: "name user_id",
+      })
+      .populate({
+        path: "transferHistory.to",
+        select: "name user_id",
       });
 
     if (!assign) {

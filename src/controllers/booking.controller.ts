@@ -6,6 +6,7 @@ import { AuthRequest } from "../middleware/protect";
 import APIFeatures from "../utils/APIFeatures";
 import User from "../models/user.model";
 import Assign from "../models/assign.model";
+import Service from "../models/service.model";
 
 // create booking
 export const createBooking = catchAsync(
