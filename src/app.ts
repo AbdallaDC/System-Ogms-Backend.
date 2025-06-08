@@ -12,6 +12,7 @@ import bookingRoutes from "./routes/booking.routes";
 import assignRoutes from "./routes/assign.routes";
 import inventoryRoutes from "./routes/inventory.routes";
 import historyRoutes from "./routes/history.routes";
+import paymentRoutes from "./routes/payment.routes";
 
 // middleware
 app.use(express.json());
@@ -26,6 +27,7 @@ app.use("/api/v1/bookings", bookingRoutes);
 app.use("/api/v1/assigns", assignRoutes);
 app.use("/api/v1/inventory", inventoryRoutes);
 app.use("/api/v1/history", historyRoutes);
+app.use("/api/v1/payments", paymentRoutes);
 
 // 404 handler
 app.use((req, res) => {

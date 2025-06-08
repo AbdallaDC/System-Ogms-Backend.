@@ -1,1 +1,8 @@
-export { DB_URI, DB_PASSWORD, JWT_SECRET } from "./config";
+export {
+  DB_URI,
+  DB_PASSWORD,
+  JWT_SECRET,
+  WAAFI_MERCHANT_UID,
+  WAAFI_API_USER_ID,
+  WAAFI_API_KEY,
+} from "./config";

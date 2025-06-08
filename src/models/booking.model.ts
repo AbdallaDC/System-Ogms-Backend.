@@ -6,7 +6,13 @@ export interface IBooking {
   vehicle_id: mongoose.Types.ObjectId;
   service_id: mongoose.Types.ObjectId;
   booking_date: Date;
-  status: "pending" | "assigned" | "in-progress" | "completed" | "cancelled";
+  status:
+    | "pending"
+    | "assigned"
+    | "in-progress"
+    | "completed"
+    | "cancelled"
+    | "paid";
   createdBy?: string;
   updatedBy?: string;
   createdAt?: Date;

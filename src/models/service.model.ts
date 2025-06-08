@@ -67,5 +67,14 @@ serviceSchema.pre("save", async function (next) {
   next();
 });
 
+serviceSchema.set("toJSON", { virtuals: true });
+serviceSchema.set("toObject", { virtuals: true });
+
+serviceSchema.virtual("bookings", {
+  ref: "Booking",
+  localField: "_id",
+  foreignField: "service_id",
+});
+
 const Service = model<IService>("Service", serviceSchema);
 export default Service;
