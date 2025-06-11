@@ -8,39 +8,7 @@ import User from "../models/user.model";
 import Booking from "../models/booking.model";
 import inventoryModel from "../models/inventory.model";
 import { calculateBookingTotal } from "../utils/booking-total-calculator.utitl";
-
-// create assign
-// export const createAssign = catchAsync(
-//   async (req: AuthRequest, res: Response, next: NextFunction) => {
-//     const userId = req.body.user_id;
-
-//     const user = await User.findById(userId);
-
-//     if (user?.role !== "mechanic") {
-//       return next(new AppError("only mechanic can assign to work", 403));
-//     }
-
-//     // check if booking is exist
-//     const booking = await Booking.findById(req.body.booking_id);
-//     if (!booking) {
-//       return next(new AppError("Booking not found", 404));
-//     }
-
-//     const assign = await Assign.create({
-//       ...req.body,
-//       createdBy: req.user?.email,
-//     });
-
-//     booking.status = "pending";
-//     await booking.save();
-
-//     res.status(201).json({
-//       status: "success",
-//       message: "Assign created successfully!",
-//       assign,
-//     });
-//   }
-// );
+import { createNotification } from "../utils/createNotification";
 
 export const createAssign = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -50,7 +18,15 @@ export const createAssign = catchAsync(
       return next(new AppError("Missing required fields", 400));
     }
 
-    const booking = await Booking.findById(booking_id);
+    const booking: any = await Booking.findById(booking_id)
+      .populate({
+        path: "user_id",
+        select: "name email phone user_id",
+      })
+      .populate({
+        path: "service_id",
+        select: "service_name service_id price",
+      });
     if (!booking) return next(new AppError("Booking not found", 404));
 
     // validate inventory items
@@ -79,10 +55,35 @@ export const createAssign = catchAsync(
       status: "assigned",
     });
 
+    // Update booking status
+    booking.status = "assigned";
+    await booking.save();
+
     // Deduct inventory
     for (const entry of usedInventory) {
       await inventoryModel.findByIdAndUpdate(entry.item, {
         $inc: { quantity: -entry.quantity },
+      });
+    }
+
+    // After assigning mechanic to booking, send notification
+    if (user_id) {
+      await createNotification({
+        user_id,
+        title: "new assign",
+        message: `you have been assigned to ${booking.service_id.service_name} service`,
+        type: "info",
+        // link: `/mechanic/bookings/${booking._id}`,
+      });
+    }
+
+    // send notification to customer
+    if (booking.user_id) {
+      await createNotification({
+        user_id: booking.user_id,
+        title: "booking assigned",
+        message: "your booking has been assigned to a mechanic",
+        type: "info",
       });
     }
 
@@ -113,6 +114,60 @@ export const updateAssignStatus = catchAsync(
       return next(new AppError("Assigned work not found", 404));
     }
 
+    const admins = await User.find({ role: "admin" });
+    const booking: any = await Booking.findById(assign.booking_id).populate({
+      path: "service_id",
+      select: "service_name service_id price",
+    });
+    const customer = await User.findOne({
+      _id: assign.user_id,
+      role: "customer",
+    });
+
+    if (status === "completed") {
+      if (!customer) return;
+      await createNotification({
+        user_id: customer._id.toString(),
+        title: "work completed",
+        message: `Mechanic ${assign.user_id} has completed work for your booking ${booking.service_id.service_name}`,
+        type: "success",
+        // link: `/customer/bookings/${booking._id}`,
+      });
+    }
+    // send notification to admin
+
+    for (const admin of admins) {
+      switch (status) {
+        case "completed":
+          await createNotification({
+            user_id: admin._id.toString(),
+            title: "work completed",
+            message: `Mechanic ${assign.user_id} has completed work for ${booking.service_id.service_name}`,
+            type: "info",
+            link: `/assignments/${assign._id}`,
+          });
+          break;
+        case "cancelled":
+          await createNotification({
+            user_id: admin._id.toString(),
+            title: "work cancelled",
+            message: `Mechanic ${assign.user_id} has cancelled work for ${booking.service_id.service_name}`,
+            type: "error",
+            link: `/assignments/${assign._id}`,
+          });
+          break;
+        case "pending":
+          await createNotification({
+            user_id: admin._id.toString(),
+            title: "work pending",
+            message: `Mechanic ${assign.user_id} has assigned work for ${booking.service_id.service_name}`,
+            type: "warning",
+            link: `/assignments/${assign._id}`,
+          });
+          break;
+      }
+    }
+
     res.status(200).json({
       status: "success",
       message: "Status updated successfully",
@@ -136,7 +191,7 @@ export const getAllAssigns = catchAsync(
       })
       .populate({
         path: "booking_id",
-        select: "booking_date status service_id vehicle_id",
+        select: "booking_date status service_id",
         populate: [
           {
             path: "service_id",
@@ -178,7 +233,7 @@ export const getAssignById = catchAsync(
       })
       .populate({
         path: "booking_id",
-        select: "booking_date status service_id vehicle_id",
+        select: "booking_date status service_id",
         populate: [
           {
             path: "service_id",
@@ -221,9 +276,69 @@ export const updateAssign = catchAsync(
       }
     );
 
-    if (!updatedAssign) {
+    const assign: any = await Assign.findById(req.params.id).populate({
+      path: "user_id",
+      select: "name email phone user_id",
+    });
+
+    if (!updatedAssign || !assign) {
       return next(new AppError("Assign not found!", 404));
     }
+
+    const admins = await User.find({ role: "admin" });
+    const booking: any = await Booking.findById(assign.booking_id).populate({
+      path: "service_id",
+      select: "service_name service_id price",
+    });
+    const customer = await User.findOne({
+      _id: assign.user_id,
+      role: "customer",
+    });
+
+    if (req.body.status === "completed") {
+      if (!customer) return;
+      await createNotification({
+        user_id: customer._id.toString(),
+        title: "work completed",
+        message: `Mechanic ${assign.user_id.name} has completed work for your booking ${booking.service_id.service_name}`,
+        type: "success",
+        // link: `/customer/bookings/${booking._id}`,
+      });
+    }
+    // send notification to admin
+
+    for (const admin of admins) {
+      switch (req.body.status) {
+        case "completed":
+          await createNotification({
+            user_id: admin._id.toString(),
+            title: "work completed",
+            message: `Mechanic ${assign.user_id.name} has completed work for ${booking.service_id.service_name}`,
+            type: "info",
+            link: `/assignments/${assign._id}`,
+          });
+          break;
+        case "cancelled":
+          await createNotification({
+            user_id: admin._id.toString(),
+            title: "work cancelled",
+            message: `Mechanic ${assign.user_id.name} has cancelled work for ${booking.service_id.service_name}`,
+            type: "error",
+            link: `/assignments/${assign._id}`,
+          });
+          break;
+        case "pending":
+          await createNotification({
+            user_id: admin._id.toString(),
+            title: "work pending",
+            message: `Mechanic ${assign.user_id.name} has been updated status to pending  work for ${booking.service_id.service_name}`,
+            type: "warning",
+            link: `/assignments/${assign._id}`,
+          });
+          break;
+      }
+    }
+
     res.status(200).json({
       status: "success",
       assign: updatedAssign,

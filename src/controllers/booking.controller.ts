@@ -9,6 +9,7 @@ import Assign from "../models/assign.model";
 import Service from "../models/service.model";
 import { calculateBookingTotal } from "../utils/booking-total-calculator.utitl";
 import inventoryModel from "../models/inventory.model";
+import { createNotification } from "../utils/createNotification";
 
 // create booking
 // export const createBooking = catchAsync(
@@ -44,36 +45,23 @@ export const createBooking = catchAsync(
       return next(new AppError("Please provide service_id", 400));
     }
 
-    // // Verify all inventory items exist and have enough stock
-    // for (const entry of usedInventory) {
-    //   const item = await inventoryModel.findById(entry.item);
-    //   if (!item) {
-    //     return next(
-    //       new AppError(`Inventory item not found: ${entry.item}`, 404)
-    //     );
-    //   }
-    //   if (item.quantity < entry.quantity) {
-    //     return next(
-    //       new AppError(
-    //         `Insufficient stock for ${item.name}: available=${item.quantity}, requested=${entry.quantity}`,
-    //         400
-    //       )
-    //     );
-    //   }
-    // }
+    // Find users by role
+    const admins = await User.find({ role: "admin" });
 
     // Create booking
     const booking = await Booking.create(req.body);
 
-    // Deduct inventory stock
-    // for (const entry of usedInventory) {
-    //   await inventoryModel.findByIdAndUpdate(entry.item, {
-    //     $inc: { quantity: -entry.quantity },
-    //   });
-    // }
+    const customer = await User.findById(booking.user_id);
 
-    // Calculate total
-    // const totals = await calculateBookingTotal(booking._id.toString());
+    for (const admin of admins) {
+      await createNotification({
+        user_id: admin._id.toString(),
+        title: "new booking",
+        message: `customer ${customer?.name} has booked a new service`,
+        type: "info",
+        link: `/bookings/${booking._id}`,
+      });
+    }
 
     res.status(201).json({
       status: "success",

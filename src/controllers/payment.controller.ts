@@ -17,6 +17,7 @@ import { format, startOfDay, endOfDay } from "date-fns";
 import { calculateBookingTotal } from "../utils/booking-total-calculator.utitl";
 import User from "../models/user.model";
 import Assign from "../models/assign.model";
+import { createNotification } from "../utils/createNotification";
 
 export const createPayment = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -139,6 +140,17 @@ export const createPayment = catchAsync(
         issuerTransactionId: result.params.issuerTransactionId || null,
         accountType: result.params.accountType || null,
       });
+      // send notification to admin
+      const admins = await User.find({ role: "admin" });
+      for (const admin of admins) {
+        await createNotification({
+          user_id: admin._id.toString(),
+          title: "new payment",
+          message: `Booking ${booking.booking_id} for service '${booking.service_id.service_name}' has been paid`,
+          type: "success",
+          link: `/transactions/${payment._id}`,
+        });
+      }
 
       res.status(201).json({
         status: "success",
