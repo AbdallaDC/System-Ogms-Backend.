@@ -217,10 +217,6 @@ export const getUnassignedBookings = catchAsync(
         select: "name email phone role user_id",
       })
       .populate({
-        path: "vehicle_id",
-        select: "make model year vehicle_id",
-      })
-      .populate({
         path: "service_id",
         select: "service_name service_id price",
       });
