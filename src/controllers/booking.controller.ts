@@ -175,11 +175,6 @@ export const getBookingByUserId = catchAsync(
         path: "user_id",
         select: "name email phone user_id",
       })
-      .populate({
-        path: "vehicle_id",
-        select: "model year vehicle_id",
-      });
-
     if (!booking) {
       return next(new AppError("Booking not found!", 404));
     }
