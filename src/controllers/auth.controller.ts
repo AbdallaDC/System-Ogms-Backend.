@@ -2,6 +2,7 @@ import { Request, Response, NextFunction, CookieOptions } from "express";
 import AppError from "../utils/AppError";
 import catchAsync from "../utils/catchAsync";
 import User, { IUser } from "../models/user.model";
+import { logAudit } from "../utils/logAudit.util";
 
 interface LoginInput {
   email: string;
@@ -48,6 +49,13 @@ export const login = catchAsync(
       return next(new AppError("Invalid email or password", 401));
     }
     if (!user.is_active) {
+      await logAudit({
+        action: "login failed",
+        actor: user._id,
+        module: "login",
+        // target: vehicle._id,
+        description: `user ${user.email} tried to login but is not active`,
+      });
       return next(
         new AppError(
           "Your account is not active yet. Please contact the admin.",
@@ -62,6 +70,13 @@ export const login = catchAsync(
       message: "Logged in successfully",
       token,
       user,
+    });
+    await logAudit({
+      action: "logged in",
+      actor: user._id,
+      module: "login",
+      // target: vehicle._id,
+      description: `User ${user.email} logged in successfully`,
     });
   }
 );

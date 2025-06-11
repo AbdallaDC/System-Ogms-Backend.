@@ -1,35 +1,99 @@
 import mongoose, { Schema, model } from "mongoose";
 import Counter from "./couner.model";
 
-export interface IBooking {
-  user_id: mongoose.Types.ObjectId;
-  vehicle_id: mongoose.Types.ObjectId;
-  service_id: mongoose.Types.ObjectId;
-  booking_date: Date;
-  status:
-    | "pending"
-    | "assigned"
-    | "in-progress"
-    | "completed"
-    | "cancelled"
-    | "paid";
-  createdBy?: string;
-  updatedBy?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-  booking_id?: string;
+// export interface IBooking {
+//   user_id: mongoose.Types.ObjectId;
+//   vehicle_id: mongoose.Types.ObjectId;
+//   service_id: mongoose.Types.ObjectId;
+//   booking_date: Date;
+//   status:
+//     | "pending"
+//     | "assigned"
+//     | "in-progress"
+//     | "completed"
+//     | "cancelled"
+//     | "paid";
+//   createdBy?: string;
+//   updatedBy?: string;
+//   createdAt?: Date;
+//   updatedAt?: Date;
+//   booking_id?: string;
+// }
+
+// const bookingSchema = new Schema<IBooking>(
+//   {
+//     user_id: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "User",
+//       required: true,
+//     },
+//     vehicle_id: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "Vehicle",
+//       required: true,
+//     },
+//     service_id: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "Service",
+//       required: true,
+//     },
+//     booking_date: {
+//       type: Date,
+//       required: true,
+//     },
+//     status: {
+//       type: String,
+//       default: "pending",
+//     },
+//     createdBy: {
+//       type: String,
+//     },
+//     updatedBy: {
+//       type: String,
+//     },
+//     booking_id: {
+//       type: String,
+//     },
+//   },
+//   { timestamps: true }
+// );
+
+// booking.model.ts
+
+export interface IUsedInventory {
+  item: mongoose.Types.ObjectId;
+  quantity: number;
 }
 
-const bookingSchema = new Schema<IBooking>(
+export interface IBooking extends Document {
+  booking_id: string;
+  user_id: mongoose.Types.ObjectId;
+  service_id: mongoose.Types.ObjectId;
+  // usedInventory: IUsedInventory[];
+  booking_date: Date;
+  status: "pending" | "completed" | "paid";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const usedInventorySchema = new mongoose.Schema<IUsedInventory>(
   {
+    item: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Inventory",
+      required: true,
+    },
+    quantity: { type: Number, required: true, min: 1 },
+  },
+  { _id: false }
+);
+
+const bookingSchema = new mongoose.Schema<IBooking>(
+  {
+    booking_id: { type: String, unique: true },
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
-    },
-    vehicle_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Vehicle",
       required: true,
     },
     service_id: {
@@ -37,22 +101,12 @@ const bookingSchema = new Schema<IBooking>(
       ref: "Service",
       required: true,
     },
-    booking_date: {
-      type: Date,
-      required: true,
-    },
+    // usedInventory: [usedInventorySchema],
+    booking_date: { type: Date, default: Date.now },
     status: {
       type: String,
+      enum: ["pending", "completed", "paid"],
       default: "pending",
-    },
-    createdBy: {
-      type: String,
-    },
-    updatedBy: {
-      type: String,
-    },
-    booking_id: {
-      type: String,
     },
   },
   { timestamps: true }
@@ -73,6 +127,4 @@ bookingSchema.pre("save", async function (next) {
   next();
 });
 
-const Booking = model<IBooking>("Booking", bookingSchema);
-
-export default Booking;
+export default mongoose.model<IBooking>("Booking", bookingSchema);

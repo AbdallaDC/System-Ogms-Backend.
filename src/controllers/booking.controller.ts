@@ -7,29 +7,80 @@ import APIFeatures from "../utils/APIFeatures";
 import User from "../models/user.model";
 import Assign from "../models/assign.model";
 import Service from "../models/service.model";
+import { calculateBookingTotal } from "../utils/booking-total-calculator.utitl";
+import inventoryModel from "../models/inventory.model";
 
 // create booking
+// export const createBooking = catchAsync(
+//   async (req: AuthRequest, res: Response, next: NextFunction) => {
+//     const userId = req.body.user_id;
+
+//     const user = await User.findById(userId);
+
+//     // if (user?.role !== "customer") {
+//     //   return next(
+//     //     new AppError("You are not authorized to create booking!", 403)
+//     //   );
+//     // }
+
+//     const booking = await Booking.create({
+//       ...req.body,
+//       createdBy: req.user?.email,
+//     });
+
+//     res.status(201).json({
+//       status: "success",
+//       message: "Booking created successfully!",
+//       booking,
+//     });
+//   }
+// );
+
 export const createBooking = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const userId = req.body.user_id;
+    const { service_id } = req.body;
 
-    const user = await User.findById(userId);
+    if (!service_id) {
+      return next(new AppError("Please provide service_id", 400));
+    }
 
-    // if (user?.role !== "customer") {
-    //   return next(
-    //     new AppError("You are not authorized to create booking!", 403)
-    //   );
+    // // Verify all inventory items exist and have enough stock
+    // for (const entry of usedInventory) {
+    //   const item = await inventoryModel.findById(entry.item);
+    //   if (!item) {
+    //     return next(
+    //       new AppError(`Inventory item not found: ${entry.item}`, 404)
+    //     );
+    //   }
+    //   if (item.quantity < entry.quantity) {
+    //     return next(
+    //       new AppError(
+    //         `Insufficient stock for ${item.name}: available=${item.quantity}, requested=${entry.quantity}`,
+    //         400
+    //       )
+    //     );
+    //   }
     // }
 
-    const booking = await Booking.create({
-      ...req.body,
-      createdBy: req.user?.email,
-    });
+    // Create booking
+    const booking = await Booking.create(req.body);
+
+    // Deduct inventory stock
+    // for (const entry of usedInventory) {
+    //   await inventoryModel.findByIdAndUpdate(entry.item, {
+    //     $inc: { quantity: -entry.quantity },
+    //   });
+    // }
+
+    // Calculate total
+    // const totals = await calculateBookingTotal(booking._id.toString());
 
     res.status(201).json({
       status: "success",
-      message: "Booking created successfully!",
-      booking,
+      data: {
+        booking,
+        // totals,
+      },
     });
   }
 );
@@ -48,14 +99,9 @@ export const getAllBookings = catchAsync(
         select: "name email phone role user_id",
       })
       .populate({
-        path: "vehicle_id",
-        select: "make model year vehicle_id",
-      })
-      .populate({
         path: "service_id",
         select: "service_name service_id price",
       });
-
     // get total bookings
     const totalBookingDocs = await Booking.countDocuments();
 

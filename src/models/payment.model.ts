@@ -12,6 +12,8 @@ export interface IPayment extends Document {
   booking_id: mongoose.Types.ObjectId;
   phone: string;
   method: "evc" | "zaad" | "sahal";
+  item_price: number;
+  labour_fee: number;
   amount: number;
   status: "pending" | "paid" | "failed";
   referenceId: string;
@@ -45,6 +47,8 @@ const paymentSchema = new mongoose.Schema<IPayment>(
     },
     phone: { type: String, required: true },
     method: { type: String, enum: ["evc", "zaad", "sahal"], required: true },
+    item_price: { type: Number, required: true },
+    labour_fee: { type: Number, required: true },
     amount: { type: Number, required: true },
     status: {
       type: String,

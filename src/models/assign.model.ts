@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Schema } from "mongoose";
 import Counter from "./couner.model";
+import { IUsedInventory } from "./booking.model";
 
 export interface ITransferHistory {
   from: mongoose.Types.ObjectId;
@@ -9,15 +10,28 @@ export interface ITransferHistory {
   date: Date;
 }
 
+const usedInventorySchema = new mongoose.Schema<IUsedInventory>(
+  {
+    item: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Inventory",
+      required: true,
+    },
+    quantity: { type: Number, required: true, min: 1 },
+  },
+  { _id: false }
+);
+
 interface IAssign {
   assign_id: string;
   user_id: mongoose.Types.ObjectId;
   booking_id: mongoose.Types.ObjectId;
-  status: "pending" | "in-progress" | "completed" | "cancelled";
+  status: "pending" | "assigned" | "completed" | "cancelled";
   createdBy?: string;
   transferredBy?: string;
   transferReason?: string;
   transferHistory: ITransferHistory[];
+  usedInventory: IUsedInventory[];
 }
 
 const assignSchema = new Schema<IAssign>(
@@ -34,7 +48,7 @@ const assignSchema = new Schema<IAssign>(
     },
     status: {
       type: String,
-      enum: ["pending", "in-progress", "completed", "cancelled"],
+      enum: ["pending", "assigned", "completed", "cancelled"],
       default: "pending",
     },
     createdBy: {
@@ -65,6 +79,7 @@ const assignSchema = new Schema<IAssign>(
         },
       },
     ],
+    usedInventory: [usedInventorySchema],
 
     assign_id: {
       type: String,

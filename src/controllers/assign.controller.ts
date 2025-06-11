@@ -6,45 +6,99 @@ import { AuthRequest } from "../middleware/protect";
 import APIFeatures from "../utils/APIFeatures";
 import User from "../models/user.model";
 import Booking from "../models/booking.model";
+import inventoryModel from "../models/inventory.model";
+import { calculateBookingTotal } from "../utils/booking-total-calculator.utitl";
 
 // create assign
+// export const createAssign = catchAsync(
+//   async (req: AuthRequest, res: Response, next: NextFunction) => {
+//     const userId = req.body.user_id;
+
+//     const user = await User.findById(userId);
+
+//     if (user?.role !== "mechanic") {
+//       return next(new AppError("only mechanic can assign to work", 403));
+//     }
+
+//     // check if booking is exist
+//     const booking = await Booking.findById(req.body.booking_id);
+//     if (!booking) {
+//       return next(new AppError("Booking not found", 404));
+//     }
+
+//     const assign = await Assign.create({
+//       ...req.body,
+//       createdBy: req.user?.email,
+//     });
+
+//     booking.status = "pending";
+//     await booking.save();
+
+//     res.status(201).json({
+//       status: "success",
+//       message: "Assign created successfully!",
+//       assign,
+//     });
+//   }
+// );
+
 export const createAssign = catchAsync(
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const userId = req.body.user_id;
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { booking_id, user_id, usedInventory } = req.body;
 
-    const user = await User.findById(userId);
-
-    if (user?.role !== "mechanic") {
-      return next(new AppError("only mechanic can assign to work", 403));
+    if (!booking_id || !user_id || !Array.isArray(usedInventory)) {
+      return next(new AppError("Missing required fields", 400));
     }
 
-    // check if booking is exist
-    const booking = await Booking.findById(req.body.booking_id);
-    if (!booking) {
-      return next(new AppError("Booking not found", 404));
+    const booking = await Booking.findById(booking_id);
+    if (!booking) return next(new AppError("Booking not found", 404));
+
+    // validate inventory items
+    for (const entry of usedInventory) {
+      const item = await inventoryModel.findById(entry.item);
+      if (!item) {
+        return next(
+          new AppError(`Inventory item not found: ${entry.item}`, 404)
+        );
+      }
+      if (item.quantity < entry.quantity) {
+        return next(
+          new AppError(
+            `Not enough stock for ${item.name}: Available=${item.quantity}, Requested=${entry.quantity}`,
+            400
+          )
+        );
+      }
     }
 
+    // Create assign record
     const assign = await Assign.create({
-      ...req.body,
-      createdBy: req.user?.email,
+      booking_id,
+      user_id,
+      usedInventory,
+      status: "assigned",
     });
 
-    booking.status = "assigned";
-    await booking.save();
+    // Deduct inventory
+    for (const entry of usedInventory) {
+      await inventoryModel.findByIdAndUpdate(entry.item, {
+        $inc: { quantity: -entry.quantity },
+      });
+    }
 
     res.status(201).json({
       status: "success",
-      message: "Assign created successfully!",
-      assign,
+      data: assign,
     });
   }
 );
+
 export const updateAssignStatus = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ["pending", "in progress", "completed", "cancelled"];
+    const validStatuses = ["pending", "completed", "cancelled"];
     if (!validStatuses.includes(status)) {
       return next(new AppError("Invalid status value", 400));
     }
@@ -88,10 +142,6 @@ export const getAllAssigns = catchAsync(
             path: "service_id",
             select: "service_name service_id price",
           },
-          {
-            path: "vehicle_id",
-            select: "make model year vehicle_id",
-          },
         ],
       })
       .populate({
@@ -101,6 +151,10 @@ export const getAllAssigns = catchAsync(
       .populate({
         path: "transferHistory.to",
         select: "name user_id",
+      })
+      .populate({
+        path: "usedInventory.item",
+        select: "name price",
       });
 
     // get total assigns
@@ -130,10 +184,6 @@ export const getAssignById = catchAsync(
             path: "service_id",
             select: "service_name service_id price",
           },
-          {
-            path: "vehicle_id",
-            select: "make model year vehicle_id",
-          },
         ],
       })
       .populate({
@@ -143,6 +193,10 @@ export const getAssignById = catchAsync(
       .populate({
         path: "transferHistory.to",
         select: "name user_id",
+      })
+      .populate({
+        path: "usedInventory.item",
+        select: "name price",
       });
 
     if (!assign) {
@@ -197,20 +251,21 @@ export const getAssignByUserId = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     const assign = await Assign.find({
       user_id: req.params.user_id,
-    }).populate({
-      path: "booking_id",
-      select: "booking_date status service_id vehicle_id",
-      populate: [
-        {
-          path: "service_id",
-          select: "service_name service_id price",
-        },
-        {
-          path: "vehicle_id",
-          select: "make model year vehicle_id",
-        },
-      ],
-    });
+    })
+      .populate({
+        path: "booking_id",
+        select: "booking_date status service_id vehicle_id",
+        populate: [
+          {
+            path: "service_id",
+            select: "service_name service_id price",
+          },
+        ],
+      })
+      .populate({
+        path: "usedInventory.item",
+        select: "name price",
+      });
 
     if (!assign) {
       return next(new AppError("Assign not found!", 404));

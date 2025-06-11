@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import Counter from "./couner.model";
 
 export enum InventoryType {
-  VEHICLE = "vehicle",
   SPARE_PART = "spare-part",
 }
 
@@ -20,7 +19,7 @@ const inventorySchema = new mongoose.Schema(
     type: {
       type: String,
       enum: Object.values(InventoryType),
-      required: true,
+      // required: true,
     },
     quantity: {
       type: Number,

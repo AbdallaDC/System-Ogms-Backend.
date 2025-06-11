@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 40px;
+        color: #333;
+      }
+      .header {
+        text-align: center;
+        color: #1f4e79;
+      }
+      .section {
+        margin-top: 30px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid #ddd;
+      }
+      th,
+      td {
+        padding: 10px;
+        text-align: left;
+      }
+      .total {
+        text-align: right;
+        margin-top: 20px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="header"><%= companyName %></h1>
+    <p><strong>Invoice ID:</strong> <%= invoiceId %></p>
+    <p><strong>Date:</strong> <%= new Date(date).toLocaleDateString() %></p>
+
+    <div class="section">
+      <h2>Customer Info</h2>
+      <p><strong>Name:</strong> <%= customer.name %></p>
+      <p><strong>Phone:</strong> <%= customer.phone %></p>
+    </div>
+
+    <div class="section">
+      <h2>Service Details</h2>
+      <p><strong>Service:</strong> <%= service?.service_name %></p>
+      <p><strong>Labour Fee:</strong> $<%= labourFee.toFixed(2) %></p>
+    </div>
+
+    <div class="section">
+      <h2>Parts Used</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(item => { %>
+          <tr>
+            <td><%= item.item.name %></td>
+            <td><%= item.quantity %></td>
+            <td>$<%= item.item.price.toFixed(2) %></td>
+            <td>$<%= (item.item.price * item.quantity).toFixed(2) %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="total">
+      <p>Parts Total: $<%= itemPrice.toFixed(2) %></p>
+      <p>Total Amount Due: $<%= total.toFixed(2) %></p>
+    </div>
+  </body>
+</html>
