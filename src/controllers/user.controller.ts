@@ -44,10 +44,6 @@ export const getUserById = catchAsync(
             path: "service_id",
             select: "service_name",
           },
-          {
-            path: "vehicle_id",
-            select: "make model year",
-          },
         ],
       })
       .populate({
@@ -55,7 +51,7 @@ export const getUserById = catchAsync(
         populate: [
           {
             path: "booking_id",
-            select: "booking_date service_id vehicle_id user_id status",
+            select: "booking_date service_id user_id status",
             populate: [
               {
                 path: "service_id",
@@ -64,10 +60,6 @@ export const getUserById = catchAsync(
               {
                 path: "user_id",
                 select: "name email phone role",
-              },
-              {
-                path: "vehicle_id",
-                select: "make model year",
               },
             ],
           },

@@ -122,10 +122,6 @@ export const getBookingById = catchAsync(
         select: "name email phone role",
       })
       .populate({
-        path: "vehicle_id",
-        select: "make model year",
-      })
-      .populate({
         path: "service_id",
         select: "service_name description",
       });

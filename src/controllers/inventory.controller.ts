@@ -5,12 +5,20 @@ import AppError from "../utils/AppError";
 
 export const createInventoryItem = async (req: AuthRequest, res: Response) => {
   const item = await Inventory.create(req.body);
-  res.status(201).json(item);
+  res.status(201).json({
+    status: "success",
+    message: "Inventory item created successfully!",
+    item,
+  });
 };
 
 export const getAllInventory = async (_req: AuthRequest, res: Response) => {
   const items = await Inventory.find().sort({ createdAt: -1 });
-  res.status(200).json(items);
+  res.status(200).json({
+    status: "success",
+    result: items.length,
+    items,
+  });
 };
 
 export const getInventoryById = async (

@@ -117,7 +117,7 @@ export const createPayment = catchAsync(
       const status = result.responseCode === "2001" ? "paid" : "failed";
 
       if (status === "paid") {
-        await Booking.findByIdAndUpdate(booking_id, { status: "paid" });
+        await Booking.findByIdAndUpdate(booking_id, { status: "completed" });
       }
 
       const payment = await Payment.create({

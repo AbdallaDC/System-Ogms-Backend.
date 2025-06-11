@@ -71,7 +71,7 @@ export interface IBooking extends Document {
   service_id: mongoose.Types.ObjectId;
   // usedInventory: IUsedInventory[];
   booking_date: Date;
-  status: "pending" | "completed" | "paid";
+  status: "pending" | "completed" | "cancelled";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -105,7 +105,7 @@ const bookingSchema = new mongoose.Schema<IBooking>(
     booking_date: { type: Date, default: Date.now },
     status: {
       type: String,
-      enum: ["pending", "completed", "paid"],
+      enum: ["pending", "completed", "cancelled"],
       default: "pending",
     },
   },
