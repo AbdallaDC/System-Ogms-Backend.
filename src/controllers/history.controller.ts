@@ -120,10 +120,7 @@ export const getServiceHistoryByCustomer = catchAsync(
     const { status, startDate, endDate } = req.query;
 
     const bookings = await Booking.find({ user_id: userId })
-      .populate({
-        path: "vehicle_id",
-        select: "model year vehicle_id",
-      })
+
       .populate({
         path: "service_id",
         select: "service_name service_id price",
@@ -169,7 +166,6 @@ export const getServiceHistoryByMechanic = async (
       .populate({
         path: "booking_id",
         populate: [
-          { path: "vehicle_id", select: "model year vehicle_id" },
           { path: "service_id", select: "service_name service_id price" },
         ],
       })
@@ -207,10 +203,7 @@ export const getServiceHistoryByService = catchAsync(
     const { status, startDate, endDate } = req.query;
 
     const bookings = await Booking.find({ service_id: serviceId })
-      .populate({
-        path: "vehicle_id",
-        populate: { path: "owner", select: "fullName email" },
-      })
+
       .populate("service_id")
       .populate("user_id")
       .lean();
