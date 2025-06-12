@@ -402,10 +402,21 @@ export const transferAssign = async (
   const { id } = req.params; // assign_id
   const { new_user_id, reason } = req.body;
 
-  const assign = await Assign.findOne({ _id: id });
+  const assign: any = await Assign.findOne({ _id: id }).populate({
+    path: "booking_id",
+    select: "booking_date status service_id vehicle_id",
+  });
   if (!assign) return next(new AppError("Assign not found", 404));
 
   const previousUser = assign.user_id;
+
+  // check if user's id are same
+  if (previousUser.toString() === new_user_id.toString()) {
+    return next(new AppError("Cannot transfer to same user", 400));
+  }
+
+  console.log("previousUser", previousUser);
+  console.log("new_user_id", new_user_id);
 
   // update assign
   assign.user_id = new_user_id;
@@ -420,6 +431,15 @@ export const transferAssign = async (
   });
 
   await assign.save();
+
+  // send notification to new user
+  await createNotification({
+    user_id: new_user_id,
+    title: "new assign",
+    message: `you have been assigned to ${assign.booking_id?.booking_id} service transfered to you`,
+    type: "info",
+    // link: `/mechanic/bookings/${booking._id}`,
+  });
 
   res.status(200).json({
     status: "success",
