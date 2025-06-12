@@ -404,7 +404,7 @@ export const transferAssign = async (
 
   const assign: any = await Assign.findOne({ _id: id }).populate({
     path: "booking_id",
-    select: "booking_date status service_id vehicle_id",
+    select: "booking_date booking_id status service_id",
   });
   if (!assign) return next(new AppError("Assign not found", 404));
 
