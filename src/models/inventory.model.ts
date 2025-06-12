@@ -26,10 +26,10 @@ const inventorySchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
-    unit: {
-      type: String,
-      default: "pcs",
-    },
+    // unit: {
+    //   type: String,
+    //   default: "pcs",
+    // },
     price: {
       type: Number,
       default: 0,

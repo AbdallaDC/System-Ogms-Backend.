@@ -2,6 +2,7 @@ import { NextFunction, Response } from "express";
 import Inventory from "../models/inventory.model";
 import { AuthRequest } from "../middleware/protect";
 import AppError from "../utils/AppError";
+import Assign from "../models/assign.model";
 
 export const createInventoryItem = async (req: AuthRequest, res: Response) => {
   const item = await Inventory.create(req.body);
@@ -28,7 +29,25 @@ export const getInventoryById = async (
 ) => {
   const item = await Inventory.findById(req.params.id);
   if (!item) return next(new AppError("Item not found", 404));
-  res.status(200).json(item);
+  // Count how many times this item has been used in assigns
+  const inventoryUsage = await Assign.find({
+    "usedInventory.item": item._id,
+  }).populate([
+    {
+      path: "transferHistory.from",
+      select: "name user_id",
+    },
+    {
+      path: "transferHistory.to",
+      select: "name user_id",
+    },
+  ]);
+  res.status(200).json({
+    status: "success",
+    totalUsage: inventoryUsage.length,
+    item,
+    inventoryUsage,
+  });
 };
 
 export const updateInventoryItem = async (

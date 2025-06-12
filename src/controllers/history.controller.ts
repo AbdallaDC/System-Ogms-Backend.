@@ -81,39 +81,6 @@ const applyFilters = (
     });
 };
 
-// Get service history for one vehicle
-export const getServiceHistoryByVehicle = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { vehicleId } = req.params;
-    const { status, startDate, endDate } = req.query;
-
-    const bookings = await Booking.find({ vehicle_id: vehicleId })
-      .populate("vehicle_id")
-      .populate("service_id")
-      .lean();
-
-    const assigns = await Assign.find({
-      booking_id: { $in: bookings.map((b) => b._id) },
-    })
-      .populate("user_id", "fullName email user_id")
-      .lean();
-
-    const history = applyFilters(
-      bookings,
-      assigns,
-      status as string,
-      startDate as string,
-      endDate as string
-    );
-
-    res.status(200).json({
-      status: "success",
-      result: history.length,
-      history,
-    });
-  }
-);
-
 export const getServiceHistoryByCustomer = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { userId } = req.params;

@@ -199,7 +199,9 @@ export const getAllTransactions = catchAsync(
       .populate({
         path: "booking_id",
         select: "booking_date status service_id vehicle_id",
-      });
+      })
+      .lean()
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       status: "success",

@@ -1,6 +1,6 @@
 import express from "express";
 import {
-  getServiceHistoryByVehicle,
+  // getServiceHistoryByVehicle,
   getServiceHistoryByCustomer,
   getServiceHistoryByMechanic,
   getServiceHistoryByService,
@@ -8,7 +8,7 @@ import {
 
 const router = express.Router();
 
-router.get("/vehicle/:vehicleId", getServiceHistoryByVehicle);
+// router.get("/vehicle/:vehicleId", getServiceHistoryByVehicle);
 router.get("/customer/:userId", getServiceHistoryByCustomer);
 router.get("/mechanic/:userId", getServiceHistoryByMechanic);
 router.get("/service/:serviceId", getServiceHistoryByService);

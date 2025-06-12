@@ -7,6 +7,7 @@ import {
   getInventoryById,
 } from "../controllers/inventory.controller";
 import { protect, restrictTo } from "../middleware/protect";
+import { preventInventoryDeletion } from "../middleware/prevent-inventory-deletion";
 
 const router = express.Router();
 
@@ -19,6 +20,11 @@ router
   .route("/:id")
   .get(protect, getInventoryById)
   .put(protect, restrictTo("admin"), updateInventoryItem)
-  .delete(protect, restrictTo("admin"), deleteInventoryItem);
+  .delete(
+    protect,
+    preventInventoryDeletion,
+    restrictTo("admin"),
+    deleteInventoryItem
+  );
 
 export default router;
