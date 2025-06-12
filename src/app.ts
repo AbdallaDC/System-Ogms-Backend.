@@ -15,6 +15,7 @@ import historyRoutes from "./routes/history.routes";
 import paymentRoutes from "./routes/payment.routes";
 import invoiceRoutes from "./routes/invoice.routes";
 import notificationRoutes from "./routes/notification.routes";
+import feedbackRoutes from "./routes/feedback.routes";
 
 // middleware
 app.use(express.json());
@@ -32,7 +33,7 @@ app.use("/api/v1/history", historyRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/invoices", invoiceRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
-
+app.use("/api/v1/feedback", feedbackRoutes);
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
