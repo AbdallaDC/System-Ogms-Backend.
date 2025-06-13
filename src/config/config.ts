@@ -10,3 +10,4 @@ export const JWT_SECRET = process.env.JWT_SECRET!;
 export const WAAFI_MERCHANT_UID = process.env.WAAFI_MERCHANT_UID!;
 export const WAAFI_API_USER_ID = process.env.WAAFI_API_USER_ID!;
 export const WAAFI_API_KEY = process.env.WAAFI_API_KEY!;
+export const FCM_SERVER_KEY = process.env.FCM_SERVER_KEY!;

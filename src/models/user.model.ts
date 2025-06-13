@@ -24,6 +24,7 @@ export interface IUser {
   comparePassword(password: string): Promise<boolean>;
   generateAuthToken(): string;
   user_id?: string;
+  pushNotificationToken?: string | null;
 }
 
 interface JwtPayload {
@@ -84,6 +85,10 @@ const userSchema = new Schema<IUser>(
     address: {
       type: String,
       maxlength: 100,
+    },
+    pushNotificationToken: {
+      type: String,
+      default: null,
     },
   },
   { timestamps: true }

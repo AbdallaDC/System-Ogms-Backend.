@@ -3,6 +3,7 @@ import AppError from "../utils/AppError";
 import catchAsync from "../utils/catchAsync";
 import User, { IUser } from "../models/user.model";
 import { logAudit } from "../utils/logAudit.util";
+import { AuthRequest } from "../middleware/protect";
 
 interface LoginInput {
   email: string;
@@ -77,6 +78,53 @@ export const login = catchAsync(
       module: "login",
       // target: vehicle._id,
       description: `User ${user.email} logged in successfully`,
+    });
+  }
+);
+
+// change password
+export const changePassword = catchAsync(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return next(new AppError("Please provide all fields", 400));
+    }
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return next(new AppError("Please provide all fields", 400));
+    }
+
+    const user = await User.findById(req.user?.id).select("+password");
+    // console.log("user", user);
+    if (!user) {
+      return next(new AppError("User not found", 404));
+    }
+
+    if (!(await user.comparePassword(currentPassword))) {
+      return next(new AppError("your current password is incorrect", 401));
+    }
+
+    // check if current password equals new password
+    if (currentPassword === newPassword) {
+      return next(
+        new AppError("New password cannot be same as current password", 400)
+      );
+    }
+
+    if (newPassword !== confirmPassword) {
+      return next(
+        new AppError("New password and confirm password do not match", 400)
+      );
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      status: "success",
+      message: "Password changed successfully",
+      user,
     });
   }
 );
