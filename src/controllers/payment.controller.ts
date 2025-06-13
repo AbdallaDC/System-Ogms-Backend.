@@ -485,7 +485,8 @@ export const getSingleTransactionById = catchAsync(
         path: "inventoryItems.item",
         select: "name price",
       })
-      .lean();
+      .lean()
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       status: "success",
@@ -515,7 +516,8 @@ export const getTransActionsByUserId = catchAsync(
         path: "inventoryItems.item",
         select: "name price",
       })
-      .lean();
+      .lean()
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       status: "success",
