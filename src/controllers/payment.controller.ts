@@ -18,6 +18,7 @@ import { calculateBookingTotal } from "../utils/booking-total-calculator.utitl";
 import User from "../models/user.model";
 import Assign from "../models/assign.model";
 import { createNotification } from "../utils/createNotification";
+import inventoryModel from "../models/inventory.model";
 
 export const createPayment = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -33,21 +34,6 @@ export const createPayment = catchAsync(
         new AppError("Please provide booking_id, phone, and method", 400)
       );
     }
-
-    // check if booking is assigned to user
-    // const assign = await Assign.findOne({
-    //   booking_id,
-    // });
-    // console.log("assign", assign);
-
-    // if (assign?.status !== "assigned") {
-    //   return next(
-    //     new AppError(
-    //       "Booking not assigned to mechanic yet, please hold on",
-    //       404
-    //     )
-    //   );
-    // }
 
     const booking: any = await Booking.findById(booking_id).populate({
       path: "service_id",
@@ -163,6 +149,271 @@ export const createPayment = catchAsync(
   }
 );
 
+// create payment for inventory
+export const createPaymentForInventory = catchAsync(
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const { inventory_id, quantity = 1, phone, method } = req.body;
+
+    // 1. Hubi user-ka jira
+    const user = await User.findById(req.user?.id);
+    if (!user) return next(new AppError("User not found", 404));
+
+    // 2. Validation input
+    if (!inventory_id || !phone || !method) {
+      return next(
+        new AppError("Please provide inventory_id, phone, and method", 400)
+      );
+    }
+
+    // 3. Hel inventory-ga la gadayo
+    const inventory: any = await inventoryModel.findById(inventory_id);
+    // console.log("inventory", inventory);
+    if (!inventory) return next(new AppError("Inventory not found", 404));
+
+    // check inventory quantity
+    if (inventory.quantity < quantity) {
+      return next(new AppError(`Not enough stock for ${inventory.name}`, 400));
+    }
+
+    // 4. Xisaabi qiimaha
+    // const item_price = inventory.price * quantity;
+    const item_price = inventory.price;
+    const amount = item_price * quantity;
+
+    console.log("amount", amount);
+
+    // 5. U diyaari WaafiPay
+    const counter = await Counter.findOne({ model: "Payment" });
+    const payment_id = `PAY${counter?.seq}`;
+    const referenceId = `REF${Date.now()}`;
+
+    const waafiPayload = {
+      schemaVersion: "1.0",
+      requestId: "10111331033",
+      timestamp: new Date().toISOString(),
+      channelName: "WEB",
+      serviceName: "API_PURCHASE",
+      serviceParams: {
+        merchantUid: WAAFI_MERCHANT_UID,
+        apiUserId: WAAFI_API_USER_ID,
+        apiKey: WAAFI_API_KEY,
+        paymentMethod: "mwallet_account",
+        payerInfo: {
+          accountNo: phone,
+        },
+        transactionInfo: {
+          referenceId,
+          invoiceId: payment_id,
+          amount: amount,
+          currency: "USD",
+          description: `Payment for purchasing inventory item '${inventory.name}'`,
+        },
+      },
+    };
+
+    try {
+      // 6. Call WaafiPay
+      const waafiRes = await axios.post(
+        "https://api.waafipay.com/asm",
+        waafiPayload,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      const result = waafiRes.data;
+
+      if (result.responseCode !== "2001") {
+        return next(new AppError(`${result.params.description}`, 400));
+      }
+
+      const status = result.responseCode === "2001" ? "paid" : "failed";
+
+      // 7. Update Inventory quantity
+      if (status === "paid") {
+        await inventoryModel.findByIdAndUpdate(inventory_id, {
+          $inc: { quantity: -quantity },
+        });
+      }
+
+      // 8. Save Payment
+      const payment = await Payment.create({
+        payment_id,
+        user_id: req.user?.id,
+        inventoryItems: [{ item: inventory_id, quantity }],
+        phone,
+        method,
+        item_price,
+        amount,
+        status,
+        referenceId,
+        transactionId: result.params.transactionId || null,
+        responseMessage: result.params.responseMessage || null,
+        paid_at: status === "paid" ? new Date() : undefined,
+        orderId: result.params.orderId || null,
+        issuerTransactionId: result.params.issuerTransactionId || null,
+        accountType: result.params.accountType || null,
+        description: inventory.description,
+      });
+
+      console.log("payment", payment);
+
+      // 9. Notify Admins
+      const admins = await User.find({ role: "admin" });
+      for (const admin of admins) {
+        await createNotification({
+          user_id: admin._id.toString(),
+          title: "Inventory Purchased",
+          message: `Item '${inventory.name}' has been purchased by ${user.name}`,
+          type: "success",
+          link: `/transactions/${payment._id}`,
+        });
+      }
+
+      // 10. Send Response
+      res.status(201).json({
+        status: "success",
+        data: payment,
+      });
+    } catch (error) {
+      console.log("error", error);
+      return next(new AppError("Payment failed", 400));
+    }
+  }
+);
+
+// payment for multiple inventory items
+// export const createPaymentForInventory = catchAsync(
+//   async (req: AuthRequest, res: Response, next: NextFunction) => {
+//     const { inventoryItems, phone, method } = req.body;
+
+//     // 1. Hubi user
+//     const user = await User.findById(req.user?.id);
+//     if (!user) return next(new AppError("User not found", 404));
+
+//     // 2. Validate inputs
+//     if (
+//       !inventoryItems ||
+//       !Array.isArray(inventoryItems) ||
+//       inventoryItems.length === 0
+//     ) {
+//       return next(
+//         new AppError("Please provide at least one inventory item", 400)
+//       );
+//     }
+//     if (!phone || !method) {
+//       return next(new AppError("Phone and payment method are required", 400));
+//     }
+
+//     // 3. Xisaabi total + description
+//     let item_price = 0;
+//     const populatedItems: any[] = [];
+
+//     for (const entry of inventoryItems) {
+//       const item = await inventoryModel.findById(entry.item);
+//       if (!item) throw new AppError(`Item not found: ${entry.item}`, 404);
+
+//       const qty = entry.quantity || 1;
+//       item_price += item.price * qty;
+
+//       populatedItems.push({ item, quantity: qty });
+//     }
+
+//     const amount = item_price;
+
+//     const counter = await Counter.findOne({ model: "Payment" });
+//     const payment_id = `PAY${counter?.seq}`;
+//     const referenceId = `REF${Date.now()}`;
+
+//     const description = populatedItems
+//       .map((p) => `${p.item.name} x${p.quantity}`)
+//       .join(", ");
+
+//     // 4. Waafi Payload
+//     const waafiPayload = {
+//       schemaVersion: "1.0",
+//       requestId: "10111331033",
+//       timestamp: new Date().toISOString(),
+//       channelName: "WEB",
+//       serviceName: "API_PURCHASE",
+//       serviceParams: {
+//         merchantUid: WAAFI_MERCHANT_UID,
+//         apiUserId: WAAFI_API_USER_ID,
+//         apiKey: WAAFI_API_KEY,
+//         paymentMethod: "mwallet_account",
+//         payerInfo: {
+//           accountNo: phone,
+//         },
+//         transactionInfo: {
+//           referenceId,
+//           invoiceId: payment_id,
+//           amount,
+//           currency: "USD",
+//           description: `Items purchased: ${description}`,
+//         },
+//       },
+//     };
+
+//     // 5. Call WaafiPay
+//     const waafiRes = await axios.post(
+//       "https://api.waafipay.com/asm",
+//       waafiPayload,
+//       { headers: { "Content-Type": "application/json" } }
+//     );
+
+//     const result = waafiRes.data;
+//     if (result.responseCode !== "2001") {
+//       return next(new AppError(`${result.params.description}`, 400));
+//     }
+
+//     const status = "paid";
+
+//     // 6. Reduce quantities
+//     for (const { item, quantity } of populatedItems) {
+//       await inventoryModel.findByIdAndUpdate(item._id, {
+//         $inc: { quantity: -quantity },
+//       });
+//     }
+
+//     // 7. Save Payment
+//     const payment = await Payment.create({
+//       payment_id,
+//       user_id: req.user?.id,
+//       inventoryItems,
+//       phone,
+//       method,
+//       item_price,
+//       amount,
+//       status,
+//       referenceId,
+//       transactionId: result.params.transactionId || null,
+//       responseMessage: result.params.responseMessage || null,
+//       paid_at: new Date(),
+//       orderId: result.params.orderId || null,
+//       issuerTransactionId: result.params.issuerTransactionId || null,
+//       accountType: result.params.accountType || null,
+//       description,
+//     });
+
+//     // 8. Notify admins
+//     const admins = await User.find({ role: "admin" });
+//     for (const admin of admins) {
+//       await createNotification({
+//         user_id: admin._id.toString(),
+//         title: "Multiple Inventory Payment",
+//         message: `User ${user.name} purchased ${populatedItems.length} items.`,
+//         type: "success",
+//         link: `/transactions/${payment._id}`,
+//       });
+//     }
+
+//     res.status(201).json({
+//       status: "success",
+//       data: payment,
+//     });
+//   }
+// );
+
 // get all transaction
 export const getAllTransactions = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -200,6 +451,10 @@ export const getAllTransactions = catchAsync(
         path: "booking_id",
         select: "booking_date status service_id vehicle_id",
       })
+      .populate({
+        path: "inventoryItems.item",
+        select: "name price",
+      })
       .lean()
       .sort({ createdAt: -1 });
 
@@ -225,7 +480,12 @@ export const getSingleTransactionById = catchAsync(
       .populate({
         path: "booking_id",
         select: "booking_date status service_id vehicle_id",
-      });
+      })
+      .populate({
+        path: "inventoryItems.item",
+        select: "name price",
+      })
+      .lean();
 
     res.status(200).json({
       status: "success",
@@ -241,16 +501,21 @@ export const getTransActionsByUserId = catchAsync(
     })
       .populate({
         path: "service_id",
-        select: "service_name service_id price",
+        // select: "service_name service_id price",
       })
       .populate({
         path: "user_id",
-        select: "name email phone user_id",
+        // select: "name email phone user_id",
       })
       .populate({
         path: "booking_id",
-        select: "booking_date status service_id vehicle_id",
-      });
+        // select: "booking_date status service_id vehicle_id",
+      })
+      .populate({
+        path: "inventoryItems.item",
+        select: "name price",
+      })
+      .lean();
 
     res.status(200).json({
       status: "success",

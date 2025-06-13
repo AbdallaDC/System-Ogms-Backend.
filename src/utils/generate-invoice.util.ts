@@ -11,15 +11,11 @@ import Inventory from "../models/inventory.model";
 import AppError from "../utils/AppError";
 import Assign from "../models/assign.model";
 
-// export const generateInvoicePDF = async (
-//   paymentId: string
-// ): Promise<Buffer> => {
+// export const getInvoiceData = async (paymentId: string) => {
 //   const payment = await Payment.findById(paymentId)
 //     .populate("booking_id")
 //     .populate("service_id")
 //     .populate("user_id");
-
-//   //   console.log("payment from generateInvoicePDF", payment);
 
 //   if (!payment) throw new AppError("Payment not found", 404);
 
@@ -31,13 +27,7 @@ import Assign from "../models/assign.model";
 
 //   if (!assign) throw new AppError("Assign not found", 404);
 
-//   const templatePath = path.join(
-//     __dirname,
-//     "../templates/invoice.template.ejs"
-//   );
-//   const template = fs.readFileSync(templatePath, "utf-8");
-
-//   const html = ejs.render(template, {
+//   return {
 //     companyName: "Garage Pro",
 //     payment,
 //     booking: assign.booking_id,
@@ -49,46 +39,53 @@ import Assign from "../models/assign.model";
 //     itemPrice: payment.item_price,
 //     date: payment.paid_at,
 //     invoiceId: payment.payment_id,
-//   });
-
-//   const browser = await puppeteer.launch();
-//   const page = await browser.newPage();
-//   await page.setContent(html, { waitUntil: "networkidle0" });
-//   //   const pdfBuffer = await page.pdf({ format: 'A4' });
-//   const pdfUint8Array = await page.pdf({ format: "A4" });
-//   const pdfBuffer = Buffer.from(pdfUint8Array);
-
-//   await browser.close();
-
-//   return pdfBuffer;
+//   };
 // };
 
 export const getInvoiceData = async (paymentId: string) => {
   const payment = await Payment.findById(paymentId)
     .populate("booking_id")
     .populate("service_id")
-    .populate("user_id");
+    .populate("user_id")
+    .populate("inventoryItems.item");
 
   if (!payment) throw new AppError("Payment not found", 404);
 
-  const assign = await Assign.findOne({
-    booking_id: payment.booking_id,
-  })
-    .populate("usedInventory.item")
-    .populate("booking_id");
+  // Case 1: Booking-based
+  if (payment.booking_id) {
+    const assign = await Assign.findOne({
+      booking_id: payment.booking_id,
+    })
+      .populate("usedInventory.item")
+      .populate("booking_id");
 
-  if (!assign) throw new AppError("Assign not found", 404);
+    if (!assign) throw new AppError("Assign not found", 404);
 
+    return {
+      companyName: "Garage Pro",
+      type: "booking",
+      payment,
+      booking: assign.booking_id,
+      customer: payment.user_id,
+      service: payment.service_id,
+      items: assign.usedInventory,
+      total: payment.amount,
+      labourFee: payment.labour_fee,
+      itemPrice: payment.item_price,
+      date: payment.paid_at,
+      invoiceId: payment.payment_id,
+    };
+  }
+
+  // Case 2: Inventory-only
   return {
     companyName: "Garage Pro",
+    type: "inventory",
     payment,
-    booking: assign.booking_id,
     customer: payment.user_id,
-    service: payment.service_id,
-    items: assign.usedInventory,
-    total: payment.amount,
-    labourFee: payment.labour_fee,
+    items: payment.inventoryItems,
     itemPrice: payment.item_price,
+    total: payment.amount,
     date: payment.paid_at,
     invoiceId: payment.payment_id,
   };

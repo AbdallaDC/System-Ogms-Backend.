@@ -4,6 +4,8 @@ import Counter from "./couner.model";
 
 export enum InventoryType {
   SPARE_PART = "spare-part",
+  EQUIPMENT = "equipment",
+  VEHICLE = "vehicle",
 }
 
 const inventorySchema = new mongoose.Schema(

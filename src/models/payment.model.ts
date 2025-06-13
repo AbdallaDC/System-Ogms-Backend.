@@ -8,12 +8,27 @@ export interface IPayment extends Document {
   accountType: string;
   payment_id: string;
   user_id: mongoose.Types.ObjectId;
-  service_id: mongoose.Types.ObjectId;
-  booking_id: mongoose.Types.ObjectId;
+  service_id?: mongoose.Types.ObjectId;
+  booking_id?: mongoose.Types.ObjectId;
+
+  inventoryItems?: {
+    type: [
+      {
+        item: {
+          type: mongoose.Schema.Types.ObjectId;
+          ref: "Inventory";
+          required: true;
+        };
+        quantity: { type: Number; default: 1 };
+      }
+    ];
+    default: [];
+  };
+
   phone: string;
   method: "evc" | "zaad" | "sahal";
-  item_price: number;
-  labour_fee: number;
+  item_price?: number;
+  labour_fee?: number;
   amount: number;
   status: "pending" | "paid" | "failed";
   referenceId: string;
@@ -22,6 +37,7 @@ export interface IPayment extends Document {
   paid_at?: Date;
   createdAt: Date;
   updatedAt: Date;
+  description?: string;
 }
 
 const paymentSchema = new mongoose.Schema<IPayment>(
@@ -38,23 +54,34 @@ const paymentSchema = new mongoose.Schema<IPayment>(
     service_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Service",
-      required: true,
+      // required: true,
     },
     booking_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",
-      required: true,
+      // required: true,
     },
+    inventoryItems: [
+      {
+        item: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Inventory",
+          required: true,
+        },
+        quantity: { type: Number, default: 1 },
+      },
+    ],
     phone: { type: String, required: true },
     method: { type: String, enum: ["evc", "zaad", "sahal"], required: true },
-    item_price: { type: Number, required: true },
-    labour_fee: { type: Number, required: true },
+    item_price: { type: Number },
+    labour_fee: { type: Number },
     amount: { type: Number, required: true },
     status: {
       type: String,
       enum: ["pending", "paid", "failed"],
       default: "pending",
     },
+    description: { type: String },
     referenceId: { type: String, required: true },
     transactionId: { type: String },
     responseMessage: { type: String },

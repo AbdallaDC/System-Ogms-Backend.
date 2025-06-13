@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createPayment,
+  createPaymentForInventory,
   getAllTransactions,
   getTransActionsByUserId,
   getSingleTransactionById,
@@ -13,11 +14,12 @@ import { protect, restrictTo } from "../middleware/protect";
 
 const router = express.Router();
 
-router.get("/:id", getSingleTransactionById);
 router.use(protect);
 
 router.route("/").post(createPayment).get(getAllTransactions);
+router.route("/inventory").post(createPaymentForInventory);
 
+router.get("/:id", getSingleTransactionById);
 router.get("/user/transactions", getTransActionsByUserId);
 
 export default router;
