@@ -17,10 +17,11 @@ interface RegisterInput {
   phone: string;
   address?: string;
   role?: "admin" | "mechanic" | "customer";
+  license_palate: string;
 }
 
 export const register = catchAsync(async (req: Request, res: Response) => {
-  const { name, email, password, phone, address, role } =
+  const { name, email, password, phone, address, role, license_palate } =
     req.body as RegisterInput;
 
   const user = await User.create({
@@ -30,6 +31,7 @@ export const register = catchAsync(async (req: Request, res: Response) => {
     phone,
     address,
     role,
+    license_palate,
   });
 
   res.status(201).json({

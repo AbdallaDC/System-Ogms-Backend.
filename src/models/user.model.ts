@@ -25,6 +25,7 @@ export interface IUser {
   generateAuthToken(): string;
   user_id?: string;
   pushNotificationToken?: string | null;
+  license_palate: string;
 }
 
 interface JwtPayload {
@@ -67,6 +68,11 @@ const userSchema = new Schema<IUser>(
     },
     user_id: {
       type: String,
+    },
+    license_palate: {
+      type: String,
+      required: true,
+      unique: true,
     },
     phone: {
       type: String,
