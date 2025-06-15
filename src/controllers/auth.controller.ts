@@ -17,7 +17,7 @@ interface RegisterInput {
   phone: string;
   address?: string;
   role?: "admin" | "mechanic" | "customer";
-  license_palate: string;
+  license_palate?: string;
 }
 
 export const register = catchAsync(async (req: Request, res: Response) => {
