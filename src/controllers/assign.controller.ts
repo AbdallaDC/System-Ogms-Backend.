@@ -380,7 +380,16 @@ export const getAssignByUserId = catchAsync(
       .populate({
         path: "usedInventory.item",
         select: "name price",
+      })
+      .populate({
+        path: "transferHistory.from",
+        select: "name user_id",
+      })
+      .populate({
+        path: "transferHistory.to",
+        select: "name user_id",
       });
+      
 
     if (!assign) {
       return next(new AppError("Assign not found!", 404));
