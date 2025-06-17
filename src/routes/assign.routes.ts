@@ -20,7 +20,12 @@ router.put("/:id", protect, restrictTo("admin"), updateAssign);
 router.patch('/:id/status', protect, updateAssignStatus);
 router.delete("/:id", protect, restrictTo("admin"), deleteAssign);
 
+// Put this FIRST!
 router.get("/user/:user_id", protect, getAssignByUserId);
+
+// Then this
+router.get("/:id", protect, restrictTo("admin"), getAssignById);
+
 router.put("/:id/transfer", protect, restrictTo("admin"), transferAssign);
 
 export default router;
