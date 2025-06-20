@@ -12,7 +12,7 @@ const router = express.Router();
 
 router.get("/", protect, restrictTo("admin"), getAllUsers);
 router.get("/:id", protect, restrictTo("admin"), getUserById);
-router.put("/:id", protect, restrictTo("admin"), updateUser);
+router.put("/:id", protect, updateUser);
 router.delete("/:id", protect, restrictTo("admin"), deleteUser);
 
 router.get("/role/:role", protect, restrictTo("admin"), getAllUsersByRole);
