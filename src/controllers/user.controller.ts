@@ -4,6 +4,7 @@ import catchAsync from "../utils/catchAsync";
 import AppError from "../utils/AppError";
 import { AuthRequest } from "../middleware/protect";
 import APIFeatures from "../utils/APIFeatures";
+import bcryptjs from "bcryptjs";
 
 export const getAllUsers = catchAsync(
   async (req: AuthRequest, res: Response) => {
@@ -79,6 +80,11 @@ export const getUserById = catchAsync(
 // update user
 export const updateUser = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
+    // If password is being updated, hash it
+    if (req.body.password) {
+      const salt = await bcryptjs.genSalt(10);
+      req.body.password = await bcryptjs.hash(req.body.password, salt);
+    }
     const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
