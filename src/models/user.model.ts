@@ -71,7 +71,7 @@ const userSchema = new Schema<IUser>(
     },
     license_palate: {
       type: String,
-      unique: true,
+      // unique: true,
     },
     phone: {
       type: String,
