@@ -15,7 +15,7 @@ const usedInventorySchema = new mongoose.Schema<IUsedInventory>(
     item: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Inventory",
-      required: true,
+      // required: true,
     },
     quantity: { type: Number, required: true, min: 1 },
   },
