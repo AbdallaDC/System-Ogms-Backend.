@@ -6,6 +6,7 @@ export enum InventoryType {
   SPARE_PART = "spare-part",
   EQUIPMENT = "equipment",
   VEHICLE = "vehicle",
+  TOOL = "tool",
 }
 
 const inventorySchema = new mongoose.Schema(
@@ -28,10 +29,10 @@ const inventorySchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
-    // unit: {
-    //   type: String,
-    //   default: "pcs",
-    // },
+    unit: {
+      type: String,
+      default: "pcs",
+    },
     price: {
       type: Number,
       default: 0,
