@@ -47,14 +47,21 @@ export const createAssign = catchAsync(
       }
     }
 
+    // check if booking is already assigned
+    const assignedBooking = await Assign.findOne({
+      booking_id,
+    });
+
+    if (assignedBooking) {
+      return next(new AppError("Booking is already assigned", 400));
+    }
+
     // Create assign record
     const assign = await Assign.create({
       booking_id,
       user_id,
       usedInventory,
-      status: "assigned",
     });
-
     // Update booking status
     booking.status = "assigned";
     await booking.save();
@@ -191,7 +198,7 @@ export const getAllAssigns = catchAsync(
       })
       .populate({
         path: "booking_id",
-        select: "booking_date status service_id",
+        select: "booking_date booking_id status service_id",
         populate: [
           {
             path: "service_id",
@@ -354,6 +361,15 @@ export const deleteAssign = catchAsync(
     if (!deletedAssign) {
       return next(new AppError("Assign not found!", 404));
     }
+
+    // if assign is deleted, restore booking status to pending
+    // const booking = await Booking.findById(deletedAssign.booking_id);
+    // if (booking?.status === "cancelled") {
+    await Booking.findByIdAndUpdate(deletedAssign.booking_id, {
+      status: "cancelled",
+    });
+    // }
+
     res.status(204).json({
       status: "success",
       message: "Assign deleted successfully!",
@@ -389,7 +405,6 @@ export const getAssignByUserId = catchAsync(
         path: "transferHistory.to",
         select: "name user_id",
       });
-      
 
     if (!assign) {
       return next(new AppError("Assign not found!", 404));

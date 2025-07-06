@@ -10,6 +10,8 @@ import Service from "../models/service.model";
 import { calculateBookingTotal } from "../utils/booking-total-calculator.utitl";
 import inventoryModel from "../models/inventory.model";
 import { createNotification } from "../utils/createNotification";
+import paymentModel from "../models/payment.model";
+import Counter from "../models/couner.model";
 
 // create booking
 // export const createBooking = catchAsync(
@@ -139,6 +141,39 @@ export const updateBooking = catchAsync(
     if (!updatedBooking) {
       return next(new AppError("Booking not found!", 404));
     }
+    // if booking is cancelled, delete all assigns
+    if (req.body.status === "cancelled") {
+      await Assign.deleteMany({ booking_id: updatedBooking?._id });
+    }
+    // if booking is cancelld, create order
+    // if (req.body.status === "cancelled") {
+    //   const counter = await Counter.findOne({ model: "Payment" });
+    //   const payment_id = `PAY${counter?.seq}`;
+
+    //   const referenceId = `REF${Date.now()}`;
+    //   const order = await paymentModel.create({
+    //     payment_id,
+    //     user_id: req.user?.id,
+    //     service_id: updatedBooking?.service_id?._id,
+    //     booking_id: updatedBooking?._id,
+    //     phone: null,
+    //     method: null,
+    //     item_price: 0,
+    //     labour_fee: 0,
+    //     amount: 0,
+    //     status: "failed",
+    //     referenceId,
+    //     transactionId: null,
+    //     responseMessage: null,
+    //     paid_at: null,
+    //     orderId: null,
+    //     issuerTransactionId: null,
+    //     accountType: null,
+    //     description: `Booking ${
+    //       updatedBooking?.booking_id
+    //     } has been cancelled by ${req.user?.name || "user"}`,
+    //   });
+    // }
     res.status(200).json({
       status: "success",
       booking: updatedBooking,
@@ -174,7 +209,7 @@ export const getBookingByUserId = catchAsync(
       .populate({
         path: "user_id",
         select: "name email phone user_id",
-      })
+      });
     if (!booking) {
       return next(new AppError("Booking not found!", 404));
     }
@@ -193,7 +228,7 @@ export const getUnassignedBookings = catchAsync(
     const assignedBookingIds = await Assign.distinct("booking_id");
     const bookings = await Booking.find({
       _id: { $nin: assignedBookingIds },
-      status: "pending",
+      status: { $in: ["pending", "cancelled"] },
     })
       .populate({
         path: "user_id",

@@ -26,7 +26,7 @@ interface IAssign {
   assign_id: string;
   user_id: mongoose.Types.ObjectId;
   booking_id: mongoose.Types.ObjectId;
-  status: "pending" | "assigned" | "completed" | "cancelled";
+  status: "pending" | "completed" | "cancelled";
   createdBy?: string;
   transferredBy?: string;
   transferReason?: string;

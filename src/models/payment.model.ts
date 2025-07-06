@@ -42,9 +42,9 @@ export interface IPayment extends Document {
 
 const paymentSchema = new mongoose.Schema<IPayment>(
   {
-    orderId: { type: String },
-    issuerTransactionId: { type: String },
-    accountType: { type: String },
+    orderId: { type: String, default: null },
+    issuerTransactionId: { type: String, default: null },
+    accountType: { type: String, default: null },
     payment_id: { type: String, unique: true },
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -71,8 +71,8 @@ const paymentSchema = new mongoose.Schema<IPayment>(
         quantity: { type: Number, default: 1 },
       },
     ],
-    phone: { type: String, required: true },
-    method: { type: String, enum: ["evc", "zaad", "sahal"], required: true },
+    phone: { type: String, default: null },
+    method: { type: String, enum: ["evc", "zaad", "sahal"], default: null },
     item_price: { type: Number },
     labour_fee: { type: Number },
     amount: { type: Number, required: true },
@@ -81,10 +81,10 @@ const paymentSchema = new mongoose.Schema<IPayment>(
       enum: ["pending", "paid", "failed"],
       default: "pending",
     },
-    description: { type: String },
+    description: { type: String, default: null },
     referenceId: { type: String, required: true },
-    transactionId: { type: String },
-    responseMessage: { type: String },
+    transactionId: { type: String, default: null },
+    responseMessage: { type: String, default: null },
     paid_at: { type: Date },
   },
   { timestamps: true }
