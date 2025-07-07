@@ -249,3 +249,100 @@ export const getUnassignedBookings = catchAsync(
     });
   }
 );
+
+// booking report
+
+// export const getBookingReport = catchAsync(async (req, res, next) => {
+//   const { status, from, to } = req.query;
+
+//   const match: any = {};
+//   if (status) match.status = status;
+//   if (from && to) {
+//     match.createdAt = {
+//       $gte: new Date(from as string),
+//       $lte: new Date(to as string),
+//     };
+//   }
+
+//   const bookings = await Booking.find(match)
+//     .populate("user_id", "name email")
+//     .populate("service_id", "service_name price")
+//     .sort({ createdAt: -1 });
+
+//   const data = await Promise.all(
+//     bookings.map(async (booking) => {
+//       const assign = await Assign.findOne({ booking_id: booking._id }).populate(
+//         "user_id",
+//         "name email"
+//       );
+
+//       return {
+//         booking_id: booking._id,
+//         customer: booking.user_id,
+//         service: booking.service_id,
+//         status: booking.status,
+//         createdAt: booking.createdAt,
+//         mechanic: assign?.user_id || null,
+//       };
+//     })
+//   );
+
+//   res.status(200).json({
+//     status: "success",
+//     count: data.length,
+//     data,
+//   });
+// });
+
+export const getBookingReport = catchAsync(async (req, res, next) => {
+  const { status, from, to, user, mechanic } = req.query;
+
+  const match: any = {};
+  if (status) match.status = status;
+  if (user) match.user_id = user;
+  if (from && to) {
+    match.createdAt = {
+      $gte: new Date(from as string),
+      $lte: new Date(to as string),
+    };
+  }
+
+  // 1. Get filtered bookings
+  const bookings = await Booking.find(match)
+    .populate("user_id", "name email")
+    .populate("service_id", "service_name price")
+    .sort({ createdAt: -1 });
+
+  // 2. For each booking, fetch assign info
+  const data = await Promise.all(
+    bookings.map(async (booking) => {
+      const assign = await Assign.findOne({ booking_id: booking._id }).populate(
+        "user_id",
+        "name email"
+      );
+
+      // ✅ Filter by mechanic if provided
+      if (mechanic && assign?.user_id?._id.toString() !== mechanic) {
+        return null;
+      }
+
+      return {
+        booking_id: booking._id,
+        customer: booking.user_id,
+        service: booking.service_id,
+        status: booking.status,
+        createdAt: booking.createdAt,
+        mechanic: assign?.user_id || null,
+      };
+    })
+  );
+
+  // remove nulls (filtered out)
+  const filtered = data.filter((entry) => entry !== null);
+
+  res.status(200).json({
+    status: "success",
+    count: filtered.length,
+    data: filtered,
+  });
+});

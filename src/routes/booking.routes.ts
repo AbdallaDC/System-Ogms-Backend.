@@ -7,12 +7,16 @@ import {
   deleteBooking,
   getBookingByUserId,
   getUnassignedBookings,
+  getBookingReport,
 } from "../controllers/booking.controller";
 import { protect, restrictTo } from "../middleware/protect";
 
 const router = express.Router();
 
-router.use(protect);
+// router.use(protect);
+
+// report
+router.get("/report", getBookingReport);
 
 router.route("/").post(createBooking).get(getAllBookings);
 

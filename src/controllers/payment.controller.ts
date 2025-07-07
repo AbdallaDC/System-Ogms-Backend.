@@ -77,8 +77,8 @@ export const createPayment = catchAsync(
           // invoiceId: "7896504",
           referenceId,
           invoiceId: payment_id,
-          // amount: 0.01,
-          amount: totals.total,
+          amount: 0.01, // for testing purposes, use 0.01 to avoid real payment
+          // amount: totals.total,
           currency: "USD",
           description: `Payment for ${booking.service_id.service_name} service was made successfully!`,
         },
@@ -204,7 +204,8 @@ export const createPaymentForInventory = catchAsync(
         transactionInfo: {
           referenceId,
           invoiceId: payment_id,
-          amount: amount,
+          // amount: amount,
+          amount: 0.01, // for testing purposes
           currency: "USD",
           description: `Payment for purchasing inventory item '${inventory.name}'`,
         },
@@ -526,3 +527,39 @@ export const getTransActionsByUserId = catchAsync(
     });
   }
 );
+
+// payment report
+export const getPaymentReport = catchAsync(async (req, res, next) => {
+  const { status, type, method, from, to, user } = req.query;
+
+  const match: any = {};
+
+  if (status) match.status = status;
+  if (type) match.type = type;
+  if (method) match.method = method;
+  if (user) match.user_id = user;
+
+  if (from && to) {
+    match.createdAt = {
+      $gte: new Date(from as string),
+      $lte: new Date(to as string),
+    };
+  }
+
+  // 1. Get filtered payments
+  const payments = await Payment.find(match)
+    .populate("user_id", "name email")
+    .populate("service_id", "service_name")
+    .populate("inventoryItems.item", "name price")
+    .sort({ createdAt: -1 });
+
+  // 2. Get total amount
+  const total = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+  res.status(200).json({
+    status: "success",
+    count: payments.length,
+    totalAmount: total,
+    data: payments,
+  });
+});
