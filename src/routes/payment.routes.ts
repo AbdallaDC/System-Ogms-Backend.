@@ -15,7 +15,7 @@ import { protect, restrictTo } from "../middleware/protect";
 
 const router = express.Router();
 
-// router.use(protect);
+router.use(protect);
 
 // report
 router.get("/report", getPaymentReport);
