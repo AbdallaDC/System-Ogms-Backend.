@@ -319,7 +319,7 @@ export const getBookingReport = catchAsync(async (req, res, next) => {
   const bookings = await Booking.find(match)
     .populate("user_id", "name email")
     .populate("service_id", "service_name price")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: 1 });
 
   // 2. For each booking, fetch assign info
   const data = await Promise.all(

@@ -559,7 +559,7 @@ export const getPaymentReport = catchAsync(async (req, res, next) => {
     .populate("user_id", "name email")
     .populate("service_id", "service_name")
     .populate("inventoryItems.item", "name price")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: 1 });
 
   // 2. Get total amount
   const total = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
