@@ -295,15 +295,23 @@ export const getUnassignedBookings = catchAsync(
 // });
 
 export const getBookingReport = catchAsync(async (req, res, next) => {
-  const { status, from, to, user, mechanic } = req.query;
+  const { status, from, to, customer, mechanic, service } = req.query;
 
   const match: any = {};
-  if (status) match.status = status;
-  if (user) match.user_id = user;
+  // if (status) match.status = status;
+  if (status && status !== "all") match.status = status;
+  if (customer) match.user_id = customer;
+  if (service) match.service_id = service;
+  // if (from && to) {
+  //   match.createdAt = {
+  //     $gte: new Date(from as string),
+  //     $lte: new Date(to as string),
+  //   };
+  // }
   if (from && to) {
     match.createdAt = {
       $gte: new Date(from as string),
-      $lte: new Date(to as string),
+      $lte: new Date(new Date(to as string).setHours(23, 59, 59, 999)),
     };
   }
 
@@ -327,7 +335,8 @@ export const getBookingReport = catchAsync(async (req, res, next) => {
       }
 
       return {
-        booking_id: booking._id,
+        _id: booking._id,
+        booking_id: booking.booking_id,
         customer: booking.user_id,
         service: booking.service_id,
         status: booking.status,

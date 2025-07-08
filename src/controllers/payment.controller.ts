@@ -530,7 +530,7 @@ export const getTransActionsByUserId = catchAsync(
 
 // payment report
 export const getPaymentReport = catchAsync(async (req, res, next) => {
-  const { status, type, method, from, to, user } = req.query;
+  const { status, type, method, from, to, user, phone, service } = req.query;
 
   const match: any = {};
 
@@ -538,11 +538,19 @@ export const getPaymentReport = catchAsync(async (req, res, next) => {
   if (type) match.type = type;
   if (method) match.method = method;
   if (user) match.user_id = user;
+  if (phone) match.phone = phone;
+  if (service) match.service_id = service;
 
+  // if (from && to) {
+  //   match.createdAt = {
+  //     $gte: new Date(from as string),
+  //     $lte: new Date(to as string),
+  //   };
+  // }
   if (from && to) {
     match.createdAt = {
       $gte: new Date(from as string),
-      $lte: new Date(to as string),
+      $lte: new Date(new Date(to as string).setHours(23, 59, 59, 999)),
     };
   }
 
