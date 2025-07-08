@@ -26,6 +26,7 @@ export interface IUser {
   user_id?: string;
   pushNotificationToken?: string | null;
   license_palate?: string;
+  vehicle_name?: string;
 }
 
 interface JwtPayload {
@@ -70,6 +71,10 @@ const userSchema = new Schema<IUser>(
       type: String,
     },
     license_palate: {
+      type: String,
+      // unique: true,
+    },
+    vehicle_name: {
       type: String,
       // unique: true,
     },

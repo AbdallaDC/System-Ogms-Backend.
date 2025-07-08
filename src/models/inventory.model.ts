@@ -21,7 +21,7 @@ const inventorySchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: Object.values(InventoryType),
+      // enum: Object.values(InventoryType),
       // required: true,
     },
     quantity: {
