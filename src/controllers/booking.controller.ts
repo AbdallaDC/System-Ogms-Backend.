@@ -13,31 +13,7 @@ import { createNotification } from "../utils/createNotification";
 import paymentModel from "../models/payment.model";
 import Counter from "../models/couner.model";
 
-// create booking
-// export const createBooking = catchAsync(
-//   async (req: AuthRequest, res: Response, next: NextFunction) => {
-//     const userId = req.body.user_id;
 
-//     const user = await User.findById(userId);
-
-//     // if (user?.role !== "customer") {
-//     //   return next(
-//     //     new AppError("You are not authorized to create booking!", 403)
-//     //   );
-//     // }
-
-//     const booking = await Booking.create({
-//       ...req.body,
-//       createdBy: req.user?.email,
-//     });
-
-//     res.status(201).json({
-//       status: "success",
-//       message: "Booking created successfully!",
-//       booking,
-//     });
-//   }
-// );
 
 export const createBooking = catchAsync(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -145,35 +121,7 @@ export const updateBooking = catchAsync(
     if (req.body.status === "cancelled") {
       await Assign.deleteMany({ booking_id: updatedBooking?._id });
     }
-    // if booking is cancelld, create order
-    // if (req.body.status === "cancelled") {
-    //   const counter = await Counter.findOne({ model: "Payment" });
-    //   const payment_id = `PAY${counter?.seq}`;
-
-    //   const referenceId = `REF${Date.now()}`;
-    //   const order = await paymentModel.create({
-    //     payment_id,
-    //     user_id: req.user?.id,
-    //     service_id: updatedBooking?.service_id?._id,
-    //     booking_id: updatedBooking?._id,
-    //     phone: null,
-    //     method: null,
-    //     item_price: 0,
-    //     labour_fee: 0,
-    //     amount: 0,
-    //     status: "failed",
-    //     referenceId,
-    //     transactionId: null,
-    //     responseMessage: null,
-    //     paid_at: null,
-    //     orderId: null,
-    //     issuerTransactionId: null,
-    //     accountType: null,
-    //     description: `Booking ${
-    //       updatedBooking?.booking_id
-    //     } has been cancelled by ${req.user?.name || "user"}`,
-    //   });
-    // }
+    
     res.status(200).json({
       status: "success",
       booking: updatedBooking,
@@ -250,50 +198,6 @@ export const getUnassignedBookings = catchAsync(
   }
 );
 
-// booking report
-
-// export const getBookingReport = catchAsync(async (req, res, next) => {
-//   const { status, from, to } = req.query;
-
-//   const match: any = {};
-//   if (status) match.status = status;
-//   if (from && to) {
-//     match.createdAt = {
-//       $gte: new Date(from as string),
-//       $lte: new Date(to as string),
-//     };
-//   }
-
-//   const bookings = await Booking.find(match)
-//     .populate("user_id", "name email")
-//     .populate("service_id", "service_name price")
-//     .sort({ createdAt: -1 });
-
-//   const data = await Promise.all(
-//     bookings.map(async (booking) => {
-//       const assign = await Assign.findOne({ booking_id: booking._id }).populate(
-//         "user_id",
-//         "name email"
-//       );
-
-//       return {
-//         booking_id: booking._id,
-//         customer: booking.user_id,
-//         service: booking.service_id,
-//         status: booking.status,
-//         createdAt: booking.createdAt,
-//         mechanic: assign?.user_id || null,
-//       };
-//     })
-//   );
-
-//   res.status(200).json({
-//     status: "success",
-//     count: data.length,
-//     data,
-//   });
-// });
-
 export const getBookingReport = catchAsync(async (req, res, next) => {
   const { status, from, to, customer, mechanic, service } = req.query;
 
@@ -302,12 +206,7 @@ export const getBookingReport = catchAsync(async (req, res, next) => {
   if (status && status !== "all") match.status = status;
   if (customer) match.user_id = customer;
   if (service) match.service_id = service;
-  // if (from && to) {
-  //   match.createdAt = {
-  //     $gte: new Date(from as string),
-  //     $lte: new Date(to as string),
-  //   };
-  // }
+  
   if (from && to) {
     match.createdAt = {
       $gte: new Date(from as string),

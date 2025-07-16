@@ -24,28 +24,6 @@ export const createService = catchAsync(
   }
 );
 
-// export const createService = async (
-//   req: AuthRequest,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   const service = await Service.create(req.body);
-
-//   // Loop through each used inventory item
-//   for (const usage of service?.usedInventory!) {
-//     const item = await Inventory.findById(usage.item);
-//     if (!item) return next(new AppError("Inventory item not found", 404));
-
-//     if (item.quantity < usage.quantity) {
-//       return next(new AppError(`Not enough stock for ${item.name}`, 400));
-//     }
-
-//     item.quantity -= usage.quantity;
-//     await item.save();
-//   }
-
-//   res.status(201).json(service);
-// };
 
 export const getAllServices = catchAsync(
   async (req: AuthRequest, res: Response) => {
