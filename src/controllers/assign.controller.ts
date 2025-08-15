@@ -53,7 +53,7 @@ export const createAssign = catchAsync(
     });
 
     if (assignedBooking) {
-      return next(new AppError("Booking is already assigned", 400));
+      return next(new AppError("Booking is already book", 400));
     }
 
     // Create assign record
