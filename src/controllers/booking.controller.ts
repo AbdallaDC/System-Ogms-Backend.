@@ -129,20 +129,20 @@ export const updateBooking = catchAsync(
   }
 );
 
-// delete booking
-export const deleteBooking = catchAsync(
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const deletedBooking = await Booking.findByIdAndDelete(req.params.id);
+// // delete booking
+// export const deleteBooking = catchAsync(
+//   async (req: AuthRequest, res: Response, next: NextFunction) => {
+//     const deletedBooking = await Booking.findByIdAndDelete(req.params.id);
 
-    if (!deletedBooking) {
-      return next(new AppError("Booking not found!", 404));
-    }
-    res.status(204).json({
-      status: "success",
-      message: "Booking deleted successfully!",
-    });
-  }
-);
+//     if (!deletedBooking) {
+//       return next(new AppError("Booking not found!", 404));
+//     }
+//     res.status(204).json({
+//       status: "success",
+//       message: "Booking deleted successfully!",
+//     });
+//   }
+// );
 
 // get booking by user id
 export const getBookingByUserId = catchAsync(
